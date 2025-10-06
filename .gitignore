@@ -1,0 +1,9 @@
+# Dependencies
+openeos-master/node_modules/
+
+# Build output
+openeos-master/dist/
+
+# Temporary files
+temp_v4.eos
+*.log
