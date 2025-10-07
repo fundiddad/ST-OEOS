@@ -30,41 +30,7 @@
         "
       />
       <v-container v-else>
-        <template v-if="this.formUri && !this.error">
-          <loading>Importing...</loading>
-        </template>
-        <template v-else>
-          <v-text-field
-            label="Milovana Tease URL"
-            v-model="teaseUrl"
-            prepend-icon="mdi-link-variant"
-            :error-messages="errors"
-            :loading="loading"
-            @keydown.enter="loadMilovanaUrl"
-            @input="
-              () => {
-                this.error = null
-                this.formUri = false
-              }
-            "
-          />
-          <v-btn @click="loadMilovanaUrl" :loading="loading"
-            >Load Tease From URL</v-btn
-          >
-          <template v-if="!formUri">
-            <v-file-input
-              v-model="fileUpload"
-              prepend-icon="mdi-cloud-upload"
-              accept="application/json, text/json, .oeos, .eos, text/plain"
-              label="Upload Json or OEOScript"
-              :error-messages="fileErrors"
-              @change="fileError = null"
-            ></v-file-input>
-            <v-btn @click="uploadFile" :loading="loading"
-              >Load Tease From File</v-btn
-            >
-          </template>
-        </template>
+        <loading>Initializing AI Adventure...</loading>
       </v-container>
     </v-main>
     <v-dialog v-model="message.show" max-width="290">
@@ -115,9 +81,6 @@ import { version } from '../package.json'
 import {
   downloadObjectAsJson,
   convertToValidFilename,
-  encodeForCorsProxy,
-  corsProxyHeaders,
-  FIX_POLLUTION,
   getFormattedDateForFile,
   acronym,
 } from './util/io'
@@ -125,7 +88,6 @@ import prettysize from 'prettysize'
 import CryptoJS from 'crypto-js'
 import OEOSV4Parser from './util/v4-parser.js'
 
-const parser = new DOMParser()
 export default {
   name: 'App',
   components: {
@@ -200,31 +162,62 @@ export default {
       document.addEventListener('webkitfullscreenchange', exitHandler, false)
     }
 
-    let uri = window.location.search.substring(1)
-    let params = new URLSearchParams(uri)
-    const teaseId = params.get('id')
-    let previewMode = params.get('preview')
-    this.allowNoSleep = !!params.get('nosleep')
-
-    if (previewMode) {
-      previewMode = parseInt(previewMode, 10)
-      if (isNaN(previewMode)) previewMode = 0
-    } else {
-      previewMode = 0
-    }
-    this.previewMode = previewMode
-    if (teaseId) {
-      this.formUri = true
-      let teaseUrl = `https://milovana.com/webteases/showtease.php?id=${teaseId}`
-      const key = params.get('key')
-      if (key) {
-        teaseUrl += `&key=${key}`
-      }
-      this.teaseUrl = teaseUrl
-      this.loadMilovanaUrl()
-    }
+    // Start the AI-driven game
+    this.startAiDrivenTease();
   },
   methods: {
+    // New method to start the game via the ST plugin
+    async startAiDrivenTease() {
+      this.loading = true;
+      if (!window.parent || !window.parent.stOeosPlugin) {
+        this.error = "Failed to connect to SillyTavern plugin.";
+        this.loading = false;
+        return;
+      }
+      try {
+        await window.parent.stOeosPlugin.initGameData();
+        const startPageScript = await window.parent.stOeosPlugin.getPage('start');
+
+        if (!startPageScript) {
+            throw new Error('Start page not found.');
+        }
+
+        const script = OEOSV4Parser.toV1(startPageScript);
+        this.title = 'AI Adventure';
+        this.author = 'The AI Dungeon Master';
+        this.teaseId = 'ai-adventure-01'; // A static ID for now
+        this.script = script;
+
+      } catch (e) {
+        this.error = `Error initializing game: ${e.message}`;
+        console.error(e);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // New method to report state changes back to the ST plugin
+    reportStateToPlugin() {
+        if (!window.parent || !window.parent.stOeosPlugin) return;
+
+        let variables = {};
+        try {
+            // teaseStorage is a JSON string, so we need to parse it
+            if (this.teaseStorage) {
+                variables = JSON.parse(this.teaseStorage);
+            }
+        } catch (e) {
+            console.error('[OEOS] Failed to parse teaseStorage for state update:', e);
+        }
+
+        const newState = {
+            pageId: this.pageId,
+            variables: variables,
+        };
+
+        window.parent.stOeosPlugin.updateState(newState);
+    },
+
     setExternalLink(link) {
       this.externalLink = link || null
     },
@@ -233,63 +226,17 @@ export default {
       window.open(this.externalLink.link, '_blank').focus()
     },
     restoreTeaseStorage() {
-      const input = this.$refs.teaseStorageLoader
-      input.type = 'file'
-      input.accept = `.oeos_${this.teaseId}`
-      input.addEventListener('change', handleFiles, false)
-      const vue = this
-      function handleFiles() {
-        const file = this.files[0]
-        if (file) {
-          var reader = new FileReader()
-          reader.onload = function(e) {
-            try {
-              const bytes = CryptoJS.AES.decrypt(
-                JSON.parse(e.target.result),
-                vue.teaseId + '::OEOS'
-              )
-              const storageData = bytes.toString(CryptoJS.enc.Utf8)
-              if (
-                storageData &&
-                storageData.startsWith('{') &&
-                JSON.parse(storageData)
-              ) {
-                vue.teaseStorage = storageData
-              } else {
-                console.error('Invalid data?', bytes, storageData)
-                throw new Error('Invalid tease storage file', storageData)
-              }
-            } catch (err) {
-              vue.showMessage(
-                'Invalid Tease Storage',
-                'Sorry, that file does not appear to be a valid storage file for this tease.'
-              )
-              console.error(err)
-            }
-          }
-          reader.readAsText(file)
-        }
-      }
-      input.click()
+      this.showMessage('Restore Storage', 'This feature is not available in AI-driven mode.');
     },
     downloadTeaseStorage() {
-      const storageData = CryptoJS.AES.encrypt(
-        this.teaseStorage,
-        this.teaseId + '::OEOS'
-      ).toString()
-      downloadObjectAsJson(
-        storageData,
-        convertToValidFilename(
-          acronym(this.title) + '-' + getFormattedDateForFile()
-        ),
-        `oeos_${this.teaseId}`
-      )
+      this.showMessage('Download Storage', 'This feature is not available in AI-driven mode.');
     },
     didStorageSave(v) {
       if (v && v !== '{}') {
         this.hasStorage = true
       }
-      if (v) this.teaseStorage = v
+      if (v) this.teaseStorage = v;
+      this.reportStateToPlugin();
     },
     didStorageLoad(v) {
       if (v && v !== '{}') {
@@ -307,7 +254,8 @@ export default {
     },
     didTeaseEnd() {},
     pageChange(pageId) {
-      this.pageId = pageId
+      this.pageId = pageId;
+      this.reportStateToPlugin();
     },
     closeMessage() {
       this.message.show = false
@@ -321,195 +269,9 @@ export default {
       this.message.onCancel = onCancel
       this.message.show = true
     },
-    async uploadFile() {
-      if (!this.fileUpload) {
-        this.fileError = 'Please select a file first.'
-        return
-      }
-      console.log('Ready to upload', this.fileUpload)
-      try {
-        const fileContent = await this.fileUpload.text()
-        let script
-
-        // Check if it's a v4 script
-        if (
-          this.fileUpload.name.endsWith('.oeos') ||
-          !fileContent.trim().startsWith('{')
-        ) {
-          try {
-            script = OEOSV4Parser.toV1(fileContent)
-          } catch (e) {
-            this.fileError = `Failed to parse OEOScript v4: ${e.message}`
-            console.error(e)
-            return
-          }
-        } else {
-          // Assume it's a v1 JSON
-          script = JSON.parse(fileContent)
-        }
-
-        if (
-          !script ||
-          !script.pages ||
-          (script.modules && script.modules.nyx)
-        ) {
-          if (script.modules && script.modules.nyx) {
-            this.fileError = 'Sorry, NYX teases are not supported.'
-          } else {
-            this.fileError =
-              'Does not appear to be a valid EOS tease (Invalid Definitions)'
-          }
-        } else {
-          if (script.oeosmeta) {
-            const meta = script.oeosmeta
-            this.title = meta.title
-            this.author = meta.author
-            this.authorId = meta.authorId
-            this.teaseId = meta.teaseId
-            this.teaseKey = meta.teaseKey
-            this.script = script
-          } else {
-            this.message.title = 'Warning'
-            this.message.html = `This appears to be a raw EOS file, not an Open EOS file.<br>
-            Images, etc., will still be loaded from Milovana, and I won't know the title or author of this tease.<br>
-            <br>
-            Do you want to continue?`
-            this.message.onContinue = () => {
-              this.title = this.fileUpload.name
-              this.script = script
-              this.author = 'Unknown'
-            }
-            this.message.onCancel = () => {}
-            this.message.show = true
-          }
-        }
-      } catch (e) {
-        this.fileError = 'Could not read or parse the file.'
-        console.error(e)
-      }
-    },
-
-    loadMilovanaUrl() {
-      this.error = null
-      this.hasStorage = false
-      this.easeStarted = false
-      if (this.loading) return
-      const uri = this.parseTeaseURI()
-      if (!uri) {
-        this.error = 'Invalid tease URL'
-      } else {
-        // this.getRemoteScriptName(uri)
-        this.getRemoteScript(uri)
-      }
-    },
     toggleFullscreen() {
       this.isFullscreen = true
       requestAnimationFrame(() => this.$refs.mainPlayer.$el.requestFullscreen())
-    },
-    getRemoteScript(uri) {
-      this.loading = true
-
-      fetch(
-        encodeForCorsProxy(
-          'https://milovana.com/webteases/geteosscript.php',
-          `id=${uri}&${FIX_POLLUTION}` +
-            (this.previewMode
-              ? '&ncpreview=' + this.previewMode
-              : '&cacheable&_nc=' + Math.floor(Date.now() / 1000 / 60))
-        ),
-        { headers: corsProxyHeaders() }
-      )
-        .then(response => response.text()) // Get as text first
-        .then(text => {
-          const script = JSON.parse(text)
-
-          if (
-            !script ||
-            !script.pages ||
-            (script.modules && script.modules.nyx)
-          ) {
-            if (script.modules && script.modules.nyx) {
-              this.error = 'Sorry, NYX teases are not supported.'
-            } else {
-              this.error =
-                'Does not appear to be a valid EOS tease (Invalid Definitions)'
-            }
-
-            this.loading = false
-          } else {
-            this.getRemoteScriptName(uri, script)
-          }
-        })
-        .catch(e => {
-          // This catch block now handles JSON parsing errors and network errors.
-          fetch(
-            encodeForCorsProxy(
-              `https://milovana.com/webteases/showtease.php`,
-              `&id=${uri}&${FIX_POLLUTION}` +
-                (this.previewMode
-                  ? '&preview=' + this.previewMode
-                  : '&cacheable&_nc=' + Math.floor(Date.now() / 1000 / 60))
-            ),
-            { headers: corsProxyHeaders() }
-          )
-            .then(response => response.text())
-            .then(contents => {
-              console.log('Looking for old-school tease', contents)
-              this.loading = false
-              if (
-                parser
-                  .parseFromString(contents, 'text/html')
-                  .getElementById('tease_title')
-              ) {
-                this.error = 'Sorry, classic teases are not supported.'
-              } else {
-                throw e
-              }
-            })
-            .catch(() => {
-              this.error =
-                'Does not appear to be a valid EOS tease (Invalid JSON)'
-              console.error('Response parsing error', e)
-              this.loading = false
-            })
-        })
-    },
-    getRemoteScriptName(uri, script) {
-      fetch(
-        encodeForCorsProxy(
-          `https://milovana.com/webteases/showtease.php`,
-          `id=${uri}&${FIX_POLLUTION}` +
-            (this.previewMode
-              ? '&ncpreview=' + this.previewMode
-              : '&cacheable&_nc=' + Math.floor(Date.now() / 1000 / 60))
-        ),
-        { headers: corsProxyHeaders() }
-      )
-        .then(response => response.text())
-        .then(contents => {
-          this.loading = false
-          // console.log('HTML response', contents)
-          try {
-            const doc = parser
-              .parseFromString(contents, 'text/html')
-              .getElementsByTagName('body')[0]
-            this.title = doc.getAttribute('data-title')
-            this.author = doc.getAttribute('data-author')
-            this.authorId = doc.getAttribute('data-author-id')
-            this.teaseId = doc.getAttribute('data-tease-id')
-            this.teaseKey = doc.getAttribute('data-key')
-            if (this.title) document.title = this.title
-            this.script = script
-          } catch (e) {
-            console.error('Error parseing EOS HTML', e)
-            this.title = 'Error Getting Title'
-          }
-        })
-        .catch(e => {
-          this.error = 'Error loading tease HTML from Milovana'
-          console.error('HTML response error', e)
-          this.loading = false
-        })
     },
   },
 }
