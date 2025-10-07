@@ -1,6 +1,7 @@
 // SillyTavern-release/public/scripts/extensions/third-party/oeos/loader.js
 
 import { injectAndSetupSwapper } from './ui.js';
+import './index.js'; // Import the new main entry point to activate all backend logic
 
 // IIFE to keep scope clean
 (function () {
