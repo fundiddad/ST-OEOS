@@ -1,5 +1,6 @@
 // Main entry point for the OEOS AI-driven plugin. Imports and initializes all other modules.
 
+import { injectAndSetupSwapper } from './ui.js';
 import './plugin-bridge.js';
 import { listenToAiResponse } from './st-api.js';
 import { updatePageEntry } from './game-state.js';
@@ -45,4 +46,6 @@ function handleAiResponse(data) {
     console.log('[OEOS] Main plugin module loaded.');
     // Start listening for AI responses.
     listenToAiResponse(handleAiResponse);
+    // Setup the UI components.
+    injectAndSetupSwapper();
 })();
