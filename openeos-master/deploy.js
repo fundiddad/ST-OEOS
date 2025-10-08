@@ -1,62 +1,53 @@
-const { execSync } = require('child_process')
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs-extra');
+const path = require('path');
 
 // Define paths
-const sourceDir = path.join(__dirname, 'dist')
-const targetDir = path.join(
+// Source for build artifacts
+const sourceDir = path.join(__dirname, 'dist');
+
+// Intermediate directory where build artifacts are merged with extension backend files
+const intermediateDir = path.join(__dirname, 'oeos-st-extension');
+
+// Final destination in SillyTavern
+const finalTargetDir = path.join(
   __dirname,
-  '..',
+  '..', // up to src
+  '..', // up to root E:\AItease\ST_oeos
   'SillyTavern-release',
   'public',
   'scripts',
   'extensions',
   'third-party',
-  'oeos'
-)
-
-// Helper function to recursively copy a directory
-function copyDirSync(src, dest) {
-  // To be safe, create the destination directory if it doesn't exist
-  fs.mkdirSync(dest, { recursive: true })
-  let entries = fs.readdirSync(src, { withFileTypes: true })
-
-  for (let entry of entries) {
-    let srcPath = path.join(src, entry.name)
-    let destPath = path.join(dest, entry.name)
-
-    if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath)
-    } else {
-      // Check if destination directory exists, if not, create it.
-      // This handles cases where the source is a flat list of files.
-      const destDir = path.dirname(destPath)
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true })
-      }
-      fs.copyFileSync(srcPath, destPath)
-    }
-  }
-}
+  'oeos-st-extension' // as requested by user
+);
 
 try {
-  // Step 1: Copy files from dist to the target directory
-  console.log(`Copying files from ${sourceDir} to ${targetDir}...`)
+  console.log('Starting deployment process...');
 
+  // Step 1: Copy build artifacts from dist to the intermediate extension directory
+  console.log(`Step 1: Copying build artifacts from "${sourceDir}" to "${intermediateDir}"...`);
   if (!fs.existsSync(sourceDir)) {
-    console.error('Error: "dist" directory not found. Build may have failed.')
-    process.exit(1)
+    throw new Error(`Error: Source directory "${sourceDir}" not found. Build may have failed.`);
   }
+  // Copy contents of dist into intermediateDir
+  fs.copySync(sourceDir, intermediateDir, { overwrite: true });
+  console.log('Build artifacts copied successfully.');
 
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true })
+  // Step 2: Copy the entire intermediate extension directory to the final SillyTavern destination
+  console.log(`Step 2: Copying complete extension from "${intermediateDir}" to "${finalTargetDir}"...`);
+  if (!fs.existsSync(intermediateDir)) {
+    throw new Error(`Error: Intermediate directory "${intermediateDir}" not found.`);
   }
+  // Ensure final destination exists
+  fs.ensureDirSync(finalTargetDir);
+  // Copy contents of intermediateDir into finalTargetDir
+  fs.copySync(intermediateDir, finalTargetDir, { overwrite: true });
+  console.log('Extension deployed to SillyTavern successfully.');
 
-  copyDirSync(sourceDir, targetDir)
+  console.log('\nDeployment finished.');
 
-  console.log('Files copied successfully.')
-  console.log('Deployment finished.')
 } catch (error) {
-  console.error('An error occurred during deployment:', error)
-  process.exit(1)
+  console.error('\nAn error occurred during deployment:');
+  console.error(error.message);
+  process.exit(1);
 }
