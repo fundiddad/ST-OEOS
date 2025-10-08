@@ -40,14 +40,7 @@ function copyDirSync(src, dest) {
 }
 
 try {
-  // Step 1: Run the build command
-  console.log('Starting Vue build...')
-  // Use 'npm.cmd' on Windows. For cross-platform, one might check os.platform().
-  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  execSync(`${npmCmd} run build`, { stdio: 'inherit', cwd: __dirname })
-  console.log('Build completed successfully.')
-
-  // Step 2: Copy files from dist to the target directory
+  // Step 1: Copy files from dist to the target directory
   console.log(`Copying files from ${sourceDir} to ${targetDir}...`)
 
   if (!fs.existsSync(sourceDir)) {

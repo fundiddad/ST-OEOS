@@ -9,7 +9,7 @@
   "scripts": {
     "serve": "set NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service serve",
     "build": "set NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service build --no-lint",
-    "deploy": "node deploy.js",
+    "postbuild": "node deploy.js",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "dompurify": "^2.2.3",
     "duration-js": "^4.0.0",
     "entities": "^3.0.1",
+    "fs-extra": "^11.3.2",
     "howler": "^2.2.3",
     "minimatch": "^3.0.4",
     "node-vibrant": "^3.1.6",
