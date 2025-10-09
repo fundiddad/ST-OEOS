@@ -26,7 +26,6 @@ function handleAiResponse(data) {
     if (match) {
         const [, id, content, abstract] = match;
         toastr.info(`[OEOS] New page captured: ${id}`);
-        console.log(`[OEOS] New page captured: ${id}`);
 
         // 1. Update World Info with the new page data.
         // We don't need to wait for this to complete.
@@ -45,7 +44,6 @@ function handleAiResponse(data) {
 // Self-executing function to initialize the plugin
 (function () {
     toastr.success('[OEOS] Main plugin module loaded.');
-    console.log('[OEOS] Main plugin module loaded.');
     // Start listening for AI responses.
     listenToAiResponse(handleAiResponse);
     // Setup the UI components.

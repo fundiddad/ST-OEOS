@@ -18,12 +18,10 @@ const WI_ENTRIES = [
  */
 async function initGameData() {
     toastr.info('[OEOS] Initializing game data...');
-    console.log('[OEOS] Initializing game data...');
     for (const entryName of WI_ENTRIES) {
         let content = await loadWi(entryName);
         if (content === null || content === undefined) {
             toastr.info(`[OEOS] Creating World Info entry: ${entryName}`);
-            console.log(`[OEOS] Creating World Info entry: ${entryName}`);
             await saveWi(entryName, '');
         }
     }
@@ -40,7 +38,6 @@ async function initGameData() {
      await saveWi('WI-OEOS-State', startState);
 
     toastr.success('[OEOS] Game data initialized.');
-    console.log('[OEOS] Game data initialized.');
 }
 
 
@@ -75,4 +72,3 @@ window.stOeosPlugin = {
 };
 
 toastr.success('[OEOS] Plugin bridge initialized.');
-console.log('[OEOS] Plugin bridge initialized.');

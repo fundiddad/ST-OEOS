@@ -31,7 +31,6 @@ export async function updatePageEntry(id, content, abstract) {
         }
     } catch (e) {
         toastr.error(`[OEOS] Failed to parse goto commands for graph update: ${e.message}`);
-        console.error(`[OEOS] Failed to parse goto commands for graph update: ${e.message}`);
     }
 
     // 4. Notify user

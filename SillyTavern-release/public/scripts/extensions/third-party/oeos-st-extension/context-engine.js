@@ -97,5 +97,4 @@ export async function recalculateDynamicContext() {
     // 5. Save the newly generated context
     await saveWi('WI-OEOS-DynamicContext', finalContentBlock.trim());
     toastr.info(`[OEOS] DynamicContext recalculated for page: ${currentPageId}.`);
-    console.log(`[OEOS] DynamicContext recalculated for page: ${currentPageId}.`);
 }
