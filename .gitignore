@@ -7,3 +7,8 @@ openeos-master/dist/
 # Temporary files
 temp_v4.eos
 *.log
+
+# 忽略整个 SillyTavern-release 目录
+# 这个目录应该由用户自己安装 SillyTavern
+# 我们只需要在插件目录中维护我们的代码
+SillyTavern-release/
