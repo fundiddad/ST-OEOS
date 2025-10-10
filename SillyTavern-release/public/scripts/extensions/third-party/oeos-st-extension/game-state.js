@@ -10,31 +10,85 @@ import OEOSV4Parser from './v4-parser.js';
  * @param {string} abstract - The text abstract of the new page.
  */
 export async function updatePageEntry(id, content, abstract) {
-    // 1. Update Pages
-    const pagesContent = await loadWi('WI-OEOS-Pages');
-    const newPagesContent = `${pagesContent}\n\n<oeos page id="${id}">\n${content}\n</oeos page>`;
-    await saveWi('WI-OEOS-Pages', newPagesContent);
-
-    // 2. Update Abstracts
-    const abstractsContent = await loadWi('WI-OEOS-Abstracts');
-    const newAbstractsContent = `${abstractsContent}${id}: ${abstract};\n`;
-    await saveWi('WI-OEOS-Abstracts', newAbstractsContent);
-
-    // 3. Update Graph
     try {
-        const pageJson = OEOSV4Parser.toV1(content);
-        const gotos = findGotosInCommands(pageJson.pages[Object.keys(pageJson.pages)[0]]);
-        if (gotos.length > 0) {
-            const graphContent = await loadWi('WI-OEOS-Graph');
-            const newGraphContent = `${graphContent}${id} > ${gotos.join(', ')};\n`;
-            await saveWi('WI-OEOS-Graph', newGraphContent);
+        // 1. Update Pages
+        let pagesEntry = await loadWi('WI-OEOS-Pages');
+        if (!pagesEntry || !pagesEntry.entries) {
+            pagesEntry = { entries: {} };
         }
-    } catch (e) {
-        toastr.error(`[OEOS] Failed to parse goto commands for graph update: ${e.message}`);
-    }
 
-    // 4. Notify user
-    toastr.success(t`OEOS page '${id}' updated successfully!`);
+        // Create a new entry for the page
+        const pageEntry = {
+            uid: Date.now(),
+            keys: [id, "page", "oeos"],
+            content: `<oeos page id="${id}">\n${content}\n</oeos page>`,
+            constant: false,
+            order: Object.keys(pagesEntry.entries).length,
+            enabled: true,
+            probability: 100,
+            position: 0,
+            role: 0
+        };
+
+        pagesEntry.entries[pageEntry.uid] = pageEntry;
+        await saveWi('WI-OEOS-Pages', pagesEntry);
+
+        // 2. Update Abstracts
+        let abstractsEntry = await loadWi('WI-OEOS-Abstracts');
+        if (!abstractsEntry || !abstractsEntry.entries) {
+            abstractsEntry = { entries: {} };
+        }
+
+        const abstractEntry = {
+            uid: Date.now() + 1,
+            keys: [id, "abstract"],
+            content: `${id}: ${abstract};`,
+            constant: false,
+            order: Object.keys(abstractsEntry.entries).length,
+            enabled: true,
+            probability: 100,
+            position: 0,
+            role: 0
+        };
+
+        abstractsEntry.entries[abstractEntry.uid] = abstractEntry;
+        await saveWi('WI-OEOS-Abstracts', abstractsEntry);
+
+        // 3. Update Graph
+        try {
+            const pageJson = OEOSV4Parser.toV1(content);
+            const gotos = findGotosInCommands(pageJson.pages[Object.keys(pageJson.pages)[0]]);
+            if (gotos.length > 0) {
+                let graphEntry = await loadWi('WI-OEOS-Graph');
+                if (!graphEntry || !graphEntry.entries) {
+                    graphEntry = { entries: {} };
+                }
+
+                const graphContent = `${id} > ${gotos.join(', ')};\n`;
+                const graphUid = Date.now() + 2;
+                graphEntry.entries[graphUid] = {
+                    uid: graphUid,
+                    keys: [id, "graph", "goto"],
+                    content: graphContent,
+                    constant: false,
+                    order: Object.keys(graphEntry.entries).length,
+                    enabled: true,
+                    probability: 100,
+                    position: 0,
+                    role: 0
+                };
+                await saveWi('WI-OEOS-Graph', graphEntry);
+            }
+        } catch (e) {
+            toastr.error(`[OEOS] Failed to parse goto commands for graph update: ${e.message}`);
+        }
+
+        // 4. Notify user
+        toastr.success(t`OEOS page '${id}' updated successfully!`);
+    } catch (error) {
+        console.error(`[OEOS] Error updating page entry ${id}:`, error);
+        toastr.error(`[OEOS] Failed to update page '${id}': ${error.message}`);
+    }
 }
 
 /**
@@ -78,13 +132,46 @@ function findGotosInCommands(commands) {
  * @param {object} newState - The new state from the OEOS player. e.g., { pageId: 'A1', variables: { hp: 90 } }
  */
 export async function updateStateEntry(newState) {
-    const currentState = await loadWi('WI-OEOS-State');
+    try {
+        let stateEntry = await loadWi('WI-OEOS-State');
+        if (!stateEntry || !stateEntry.entries) {
+            stateEntry = { entries: {} };
+        }
 
-    // Format variables into a compact string: (hp:90,gold:450)
-    const variablesString = `(${Object.entries(newState.variables || {})
-        .map(([key, value]) => `${key}:${value}`)
-        .join(',')})`;
+        // Format variables into a compact string: (hp:90,gold:450)
+        const variablesString = `(${Object.entries(newState.variables || {})
+            .map(([key, value]) => `${key}:${value}`)
+            .join(',')})`;
 
-    const newStateString = ` > ${newState.pageId}${variablesString}`;
-    await saveWi('WI-OEOS-State', currentState + newStateString);
+        const newStateString = ` > ${newState.pageId}${variablesString}`;
+
+        // Find existing state entry or create new one
+        const existingStateEntry = Object.values(stateEntry.entries).find(entry =>
+            entry.keys && entry.keys.includes("state")
+        );
+
+        if (existingStateEntry) {
+            // Append to existing state
+            existingStateEntry.content += newStateString;
+        } else {
+            // Create new state entry
+            const stateUid = Date.now();
+            stateEntry.entries[stateUid] = {
+                uid: stateUid,
+                keys: ["state", "current"],
+                content: newStateString,
+                constant: false,
+                order: 0,
+                enabled: true,
+                probability: 100,
+                position: 0,
+                role: 0
+            };
+        }
+
+        await saveWi('WI-OEOS-State', stateEntry);
+    } catch (error) {
+        console.error(`[OEOS] Error updating state entry:`, error);
+        toastr.error(`[OEOS] Failed to update state: ${error.message}`);
+    }
 }

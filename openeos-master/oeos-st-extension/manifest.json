@@ -1,9 +1,0 @@
-{
-    "name": "OEOS Interface",
-    "display_name": "OEOS Interface",
-    "author": "gemini",
-    "version": "1.0.0",
-    "js": "loader.js",
-    "styles": [],
-    "minSillyTavernVersion": "1.11.0"
-}

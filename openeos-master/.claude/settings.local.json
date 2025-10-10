@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/AItease/ST_oeos/src/SillyTavern-release/public/scripts/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

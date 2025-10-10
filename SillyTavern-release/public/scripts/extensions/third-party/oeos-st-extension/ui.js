@@ -45,7 +45,7 @@ export function injectAndSetupSwapper() {
     });
 
     const appRoot = document.createElement('div');
-    appRoot.id = 'oeos-app-container';
+    appRoot.id = 'app'; // 修正：改为 'app' 以匹配 Vue 挂载点
     appRoot.style.height = '100%';
     appRoot.style.width = '100%';
     appRoot.style.backgroundColor = '#1e1e1e';

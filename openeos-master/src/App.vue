@@ -1,8 +1,15 @@
 <template>
   <v-app class="oeos-app-container">
     <v-main ref="mainPlayer">
+      <!-- 角色选择界面 -->
+      <character-selector
+        v-if="showCharacterSelector"
+        @character-selected="onCharacterSelected"
+      />
+
+      <!-- 游戏播放器 -->
       <open-eos-player
-        v-if="script"
+        v-else-if="script"
         :script="script"
         :title="title"
         :author="author"
@@ -29,6 +36,8 @@
           }
         "
       />
+
+      <!-- 加载中 -->
       <v-container v-else>
         <loading>Initializing AI Adventure...</loading>
       </v-container>
@@ -77,6 +86,7 @@
 <script>
 import OpenEosPlayer from './components/OpenEosPlayer'
 import Loading from './components/common/Loading'
+import CharacterSelector from './components/CharacterSelector'
 import { version } from '../package.json'
 import {
   downloadObjectAsJson,
@@ -88,11 +98,20 @@ import prettysize from 'prettysize'
 import CryptoJS from 'crypto-js'
 import OEOSV4Parser from './util/v4-parser.js'
 
+// ✅ 导入插件桥接函数（使用 ES6 模块，不使用 window 对象）
+import {
+  initGameData,
+  getPage,
+  updateState,
+  bindCharacter
+} from '../../SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/plugin-bridge.js'
+
 export default {
   name: 'App',
   components: {
     OpenEosPlayer,
     Loading,
+    CharacterSelector,
   },
   computed: {
     downloadedDisplay() {
@@ -112,6 +131,11 @@ export default {
     },
   },
   data: () => ({
+    // 角色选择相关
+    showCharacterSelector: true,  // 初始显示角色选择
+    selectedCharacterIndex: null,
+    selectedCharacter: null,
+
     isFullscreen: false,
     script: null,
     eosuri: null,
@@ -162,21 +186,43 @@ export default {
       document.addEventListener('webkitfullscreenchange', exitHandler, false)
     }
 
-    // Start the AI-driven game
-    this.startAiDrivenTease();
+    // ✅ 不自动启动游戏，等待用户选择角色
+    // this.startAiDrivenTease();
   },
   methods: {
+    // 角色选择处理
+    async onCharacterSelected({ index, character }) {
+      this.selectedCharacterIndex = index;
+      this.selectedCharacter = character;
+      this.showCharacterSelector = false;
+
+      try {
+        // ✅ 直接调用导入的函数，不使用 window 对象
+        await bindCharacter(index);
+
+        // 启动游戏
+        await this.startAiDrivenTease();
+      } catch (error) {
+        this.error = `初始化失败: ${error.message}`;
+        this.showCharacterSelector = true;
+      }
+    },
+
+    // 返回角色选择
+    returnToCharacterSelection() {
+      this.showCharacterSelector = true;
+      this.script = null;
+      this.selectedCharacterIndex = null;
+      this.selectedCharacter = null;
+    },
+
     // New method to start the game via the ST plugin
     async startAiDrivenTease() {
       this.loading = true;
-      if (!window.parent || !window.parent.stOeosPlugin) {
-        this.error = "Failed to connect to SillyTavern plugin.";
-        this.loading = false;
-        return;
-      }
+      // ✅ 直接使用导入的函数，不使用 window 对象
       try {
-        await window.parent.stOeosPlugin.initGameData();
-        const startPageScript = await window.parent.stOeosPlugin.getPage('start');
+        await initGameData();
+        const startPageScript = await getPage('start');
 
         if (!startPageScript) {
             throw new Error('Start page not found.');
@@ -198,8 +244,7 @@ export default {
 
     // New method to report state changes back to the ST plugin
     reportStateToPlugin() {
-        if (!window.parent || !window.parent.stOeosPlugin) return;
-
+        // ✅ 直接使用导入的函数
         let variables = {};
         try {
             // teaseStorage is a JSON string, so we need to parse it
@@ -215,7 +260,7 @@ export default {
             variables: variables,
         };
 
-        window.parent.stOeosPlugin.updateState(newState);
+        updateState(newState);
     },
 
     setExternalLink(link) {

@@ -9,7 +9,18 @@ import { saveWorldInfo, loadWorldInfo } from '../../../world-info.js';
  * @param {string} content - The content to save.
  */
 export async function saveWi(name, content) {
-    await saveWorldInfo(name, content, true);
+    try {
+        if (!name || typeof name !== 'string') {
+            throw new Error('Invalid World Info entry name');
+        }
+        if (content === null || content === undefined) {
+            content = '';
+        }
+        await saveWorldInfo(name, content, true);
+    } catch (error) {
+        console.error(`[OEOS] Failed to save World Info entry "${name}":`, error);
+        throw error;
+    }
 }
 
 /**
@@ -18,7 +29,16 @@ export async function saveWi(name, content) {
  * @returns {Promise<string>} - The content of the World Info entry.
  */
 export async function loadWi(name) {
-    return await loadWorldInfo(name);
+    try {
+        if (!name || typeof name !== 'string') {
+            throw new Error('Invalid World Info entry name');
+        }
+        const content = await loadWorldInfo(name);
+        return content;
+    } catch (error) {
+        console.error(`[OEOS] Failed to load World Info entry "${name}":`, error);
+        throw error;
+    }
 }
 
 /**
