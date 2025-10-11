@@ -8,17 +8,28 @@ const sourceDir = path.join(__dirname, 'dist');
 const pluginCoreDir = path.join(__dirname, '..', 'oeos-plugin-core');
 
 // Final destination in SillyTavern
-const finalTargetDir = path.join(
-  __dirname,
-  '..', // up to src
-  '..', // up to root E:\AItease\ST_oeos
-  'SillyTavern-release',
-  'public',
-  'scripts',
-  'extensions',
-  'third-party',
-  'oeos-st-extension'
-);
+// Prefer src/SillyTavern-release if it exists; fall back to repo root/SillyTavern-release
+// Allow override via environment variable ST_EXT_DIR (absolute path to extension folder)
+const explicitExtDir = process.env.ST_EXT_DIR;
+function resolveTargetDir() {
+  if (explicitExtDir) {
+    return explicitExtDir;
+  }
+  const baseCandidates = [
+    path.join(__dirname, '..', 'SillyTavern-release'),       // e.g., <repo>/src/SillyTavern-release
+    path.join(__dirname, '..', '..', 'SillyTavern-release'), // e.g., <repo>/SillyTavern-release
+  ];
+  for (const base of baseCandidates) {
+    const publicDir = path.join(base, 'public');
+    if (fs.existsSync(publicDir)) {
+      return path.join(base, 'public', 'scripts', 'extensions', 'third-party', 'oeos-st-extension');
+    }
+  }
+  // Default to src/SillyTavern-release
+  return path.join(__dirname, '..', 'SillyTavern-release', 'public', 'scripts', 'extensions', 'third-party', 'oeos-st-extension');
+}
+
+const finalTargetDir = resolveTargetDir();
 
 try {
   console.log('Starting deployment process...');
