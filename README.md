@@ -1,12 +1,60 @@
 # ST-OEOS
 
-An AI-driven plugin for SillyTavern that adapts the Open Eos script engine to power dynamically generated interactive stories.
+一个为 SillyTavern 设计的 AI 驱动插件，将 OEOS (Open Erotic Story) 脚本引擎改造为动态生成的互动故事平台。
 
-## 📋 项目架构说明
+## 📖 项目简介
 
-### 为什么 `oeos-st-extension` 不在 git 仓库中？
+ST-OEOS 将 OEOS 播放器深度集成到 SillyTavern 中，通过 AI 实时生成 OEOScript v4 格式的互动故事内容。AI 扮演"地下城主"角色，根据玩家行为、角色设定和聊天历史动态创建故事分支和挑战。
 
-这个项目采用了**解耦架构**，将代码分为两部分：
+**核心特性：**
+- ✅ AI 驱动的动态故事生成
+- ✅ 与 SillyTavern 角色系统深度整合
+- ✅ 基于 World Info 的状态持久化
+- ✅ 支持角色选择和数据绑定
+- ✅ 模块化架构，易于扩展
+
+## 🚀 快速开始
+
+### 前置要求
+
+- Node.js 14+
+- npm 或 yarn
+- SillyTavern（已安装或准备安装）
+
+### 安装步骤
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/fundiddad/ST-OEOS.git
+cd ST-OEOS/src
+
+# 2. 安装 SillyTavern（如果还没有）
+git clone https://github.com/SillyTavern/SillyTavern.git SillyTavern-release
+cd SillyTavern-release
+npm install
+cd ..
+
+# 3. 构建 OEOS 插件
+cd openeos-master
+npm install
+npm run build
+
+# 4. 部署到 SillyTavern
+node deploy.js
+
+# 5. 启动 SillyTavern
+cd ../SillyTavern-release
+npm start
+```
+
+### 启用插件
+
+1. 打开 SillyTavern（通常是 `http://localhost:8000`）
+2. 点击顶部的 **Extensions** 图标
+3. 找到 **OEOS Player** 插件并启用
+4. 点击火箭图标开始游戏
+
+## 📁 项目结构
 
 ```
 src/
@@ -15,97 +63,38 @@ src/
 │   ├── dist/                    # 构建产物（不在 git 中）
 │   └── deploy.js                # 部署脚本
 │
-└── SillyTavern-release/         # SillyTavern 安装目录（不在 git 中）
+├── oeos-plugin-core/            # 插件核心文件（在 git 中）
+│   ├── index.js                 # 插件入口
+│   ├── plugin-bridge.js         # API 桥接
+│   ├── ui.js                    # UI 加载器
+│   └── ...                      # 其他核心模块
+│
+└── SillyTavern-release/         # SillyTavern 安装（不在 git 中）
     └── public/scripts/extensions/third-party/
-        └── oeos-st-extension/   # 插件部署目录（构建后自动生成）
-            ├── index.js         # 插件入口
-            ├── plugin-bridge.js # API 桥接
-            ├── ui.js            # UI 加载器
-            ├── game-state.js    # 游戏状态管理
-            ├── st-api.js        # ST API 封装
-            └── dist/            # Vue 应用构建产物
+        └── oeos-st-extension/   # 插件部署目录（自动生成）
 ```
 
-### 设计原因
+## 🎮 基本使用
 
-1. **避免重复**：`SillyTavern-release` 是完整的 SillyTavern 安装，包含大量文件（~1GB），不应该放在 git 中
-2. **构建产物分离**：`oeos-st-extension` 目录是通过构建和部署脚本自动生成的
-3. **独立开发**：Vue 应用可以独立开发和构建，不依赖 SillyTavern 的文件
-4. **清晰的职责**：
-   - `openeos-master/` - 开发源码
-   - `oeos-st-extension/` - 部署产物
+### 启动游戏
 
-## 🚀 安装和使用
+1. 在 SillyTavern 中点击火箭图标
+2. 选择一个角色开始冒险
+3. 系统自动绑定角色数据（描述、性格、World Info、聊天历史）
+4. 开始 AI 驱动的互动故事
 
-### 前置要求
+### 游戏流程
 
-- Node.js 14+
-- npm 或 yarn
-- SillyTavern（已安装）
-
-### 步骤 1：克隆仓库
-
-```bash
-git clone https://github.com/fundiddad/ST-OEOS.git
-cd ST-OEOS/src
+```
+点击火箭图标 → 选择角色 → 绑定角色数据 → AI 生成起始页面 →
+玩家互动 → AI 生成新内容 → 无限循环
 ```
 
-### 步骤 2：安装 SillyTavern（如果还没有）
+### 数据持久化
 
-```bash
-# 在 src 目录下
-git clone https://github.com/SillyTavern/SillyTavern.git SillyTavern-release
-cd SillyTavern-release
-npm install
-cd ..
-```
-
-### 步骤 3：构建 OEOS 插件
-
-```bash
-# 在 src 目录下
-cd openeos-master
-npm install
-npm run build
-```
-
-### 步骤 4：部署到 SillyTavern
-
-```bash
-# 在 openeos-master 目录下
-node deploy.js
-```
-
-这会自动将构建产物复制到：
-```
-SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
-```
-
-### 步骤 5：手动复制插件核心文件
-
-由于插件核心文件（`index.js`, `plugin-bridge.js` 等）不在 git 中，你需要手动创建它们。
-
-**方法 1：从文档中复制**（推荐）
-
-查看 `src/target_new.md` 和 `src/IMPLEMENTATION_GUIDE.md`，其中包含了所有插件文件的完整代码。
-
-**方法 2：使用备份**（如果有）
-
-如果你之前有备份，可以直接复制。
-
-### 步骤 6：启动 SillyTavern
-
-```bash
-cd SillyTavern-release
-npm start
-```
-
-### 步骤 7：在 SillyTavern 中启用插件
-
-1. 打开 SillyTavern（通常是 `http://localhost:8000`）
-2. 点击顶部的 **Extensions** 图标
-3. 找到 **OEOS Player** 插件
-4. 点击启用
+- 游戏状态存储在 SillyTavern 的 World Info 中
+- 每个角色有独立的游戏进度
+- 支持保存/加载游戏
 
 ## 🔧 开发工作流
 
@@ -113,84 +102,73 @@ npm start
 
 ```bash
 cd openeos-master
-# 修改 src/ 下的文件
-npm run serve  # 开发模式（需要配置 CORS 代理）
-# 或
-npm run build  # 构建生产版本
-node deploy.js # 部署到 SillyTavern
+
+# 开发模式（需要配置 CORS 代理）
+npm run serve
+
+# 或构建生产版本
+npm run build
+node deploy.js
 ```
 
 ### 修改插件核心文件
 
-直接编辑 `SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/` 下的文件：
-- `index.js` - 插件入口
-- `plugin-bridge.js` - API 桥接
-- `ui.js` - UI 加载器
-- `game-state.js` - 游戏状态管理
-- `st-api.js` - ST API 封装
+```bash
+# 编辑 src/oeos-plugin-core/ 下的文件
+# 然后重新部署
+cd openeos-master
+node deploy.js
+```
 
-修改后刷新 SillyTavern 页面即可看到效果。
+## 📚 文档索引
 
-## 📚 架构文档
-
-- **`target_new.md`** - 完整的实现计划和代码示例
-- **`IMPLEMENTATION_GUIDE.md`** - 快速实现指南
-- **`DECOUPLING_SOLUTION.md`** - 解耦方案详细说明
-- **`ARCHITECTURE_CORRECTION.md`** - 架构修正文档
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 架构设计文档
+- **[IMPLEMENTATION.md](./IMPLEMENTATION.md)** - 实现指南和代码示例
+- **[oeos-commands.v4.md](./oeos-commands.v4.md)** - OEOScript v4 语法参考
 
 ## 🎯 核心概念
 
-### 全局 API 桥接
+### 解耦架构
 
-插件通过 `window.oeosApi` 暴露 API，Vue 应用通过全局对象访问：
+Vue 应用通过全局 API (`window.oeosApi`) 与插件通信，实现完全解耦：
 
 ```javascript
-// 在 plugin-bridge.js 中
+// 插件暴露 API
 window.oeosApi = {
     initGameData,
     getPage,
     updateState,
     bindCharacter,
-    // ...
 };
 
-// 在 App.vue 中
+// Vue 应用调用 API
 if (window.oeosApi) {
     await window.oeosApi.initGameData();
 }
 ```
 
-这样 Vue 应用可以独立构建，不需要 import SillyTavern 的文件。
+### World Info 驱动
+
+所有游戏数据存储在 World Info 中：
+- `WI-OEOS-Pages` - 页面数据库
+- `WI-OEOS-State` - 玩家状态和路径
+- `WI-OEOS-Graph` - 故事图谱
+- `WI-OEOS-DynamicContext` - 动态上下文
 
 ## ❓ 常见问题
 
-### Q: 为什么构建后还需要手动复制插件文件？
+**Q: 为什么 SillyTavern-release 不在 git 中？**
+A: SillyTavern 是独立项目（~1GB），应由用户自行安装。我们只维护插件代码。
 
-A: 因为插件核心文件（`index.js`, `plugin-bridge.js` 等）不在 git 仓库中。你可以：
-1. 从文档中复制代码
-2. 创建一个本地备份
-3. 或者将这些文件添加到 git（但要注意不要提交 SillyTavern 的其他文件）
+**Q: 如何更新插件？**
+A: 修改代码后运行 `npm run build && node deploy.js` 即可。
 
-### Q: 我可以把插件文件加入 git 吗？
+**Q: 支持哪些 OEOScript 版本？**
+A: 目前支持 OEOScript v4。详见 `oeos-commands.v4.md`。
 
-A: 可以！你可以创建一个单独的目录来存放插件核心文件，例如：
+## 🤝 贡献
 
-```
-src/
-├── oeos-plugin-source/          # 插件源码（可以加入 git）
-│   ├── index.js
-│   ├── plugin-bridge.js
-│   ├── ui.js
-│   └── ...
-└── openeos-master/
-    └── deploy.js                # 修改部署脚本，同时复制插件文件
-```
-
-### Q: 每次修改都要重新构建和部署吗？
-
-A:
-- **Vue 应用**：是的，需要 `npm run build` + `node deploy.js`
-- **插件核心文件**：不需要，直接修改后刷新页面即可
+欢迎提交 Issue 和 Pull Request！
 
 ## 📝 License
 

@@ -5,8 +5,8 @@ import { recalculateDynamicContext } from './context-engine.js';
 import { loadWi, saveWi } from './st-api.js';
 
 // ✅ 导入 SillyTavern 核心模块
-import { characters, this_chid, chat, eventSource, event_types } from '../../../../script.js';
-import { saveSettingsDebounced } from '../../../extensions.js';
+import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebounced, getRequestHeaders } from '../../../../script.js';
+
 
 const WI_ENTRIES = [
     'WI-OEOS-Pages',
@@ -188,20 +188,65 @@ async function updateState(newState) {
 }
 
 /**
- * 获取所有可用角色列表
- * @returns {Array} 角色列表
+ * 检查角色是否为 OEOS 支持角色
+ * @param {number} charIndex 角色索引
+ * @returns {Promise<boolean>} 是否为 OEOS 角色
  */
-export function getCharacters() {
-    return characters.map((char, index) => ({
-        index: index,
-        name: char.name,
-        avatar: char.avatar,
-        description: char.description,
-        personality: char.personality,
-        scenario: char.scenario,
-        chat_size: char.chat_size,
-        date_last_chat: char.date_last_chat,
-    }));
+export async function isOEOSCharacter(charIndex) {
+    try {
+        const char = characters[charIndex];
+        if (!char) return false;
+
+        // 检查角色是否有绑定的 World Info
+        const worldInfoName = char.data?.extensions?.world;
+        if (!worldInfoName) return false;
+
+        // 加载角色的 World Info
+        const worldInfo = await loadWi(worldInfoName);
+        if (!worldInfo || !worldInfo.entries) return false;
+
+        // 检查是否包含 OEOS-character 标记条目
+        // 注意：SillyTavern 的 World Info 条目使用 'key' 而不是 'keys'
+        for (const entry of Object.values(worldInfo.entries)) {
+            const keys = entry.key || entry.keys || [];
+            if (Array.isArray(keys) && keys.includes('OEOS-character')) {
+                return true;
+            }
+        }
+
+        return false;
+    } catch (error) {
+        console.error(`[OEOS] Error checking OEOS character:`, error);
+        return false;
+    }
+}
+
+/**
+ * 获取所有可用角色列表（包含 OEOS 状态）
+ * @returns {Promise<Array>} 角色列表
+ */
+export async function getCharacters() {
+    const charList = [];
+
+    for (let index = 0; index < characters.length; index++) {
+        const char = characters[index];
+        const isOEOS = await isOEOSCharacter(index);
+
+        charList.push({
+            index: index,
+            name: char.name,
+            avatar: char.avatar,
+            description: char.description,
+            personality: char.personality,
+            scenario: char.scenario,
+            chat_size: char.chat_size,
+            date_last_chat: char.date_last_chat,
+            isOEOS: isOEOS,  // 新增：是否为 OEOS 角色
+            worldInfo: char.data?.extensions?.world || null,  // 新增：World Info 名称
+        });
+    }
+
+    return charList;
 }
 
 /**
@@ -231,6 +276,123 @@ export function getCharacterWorldInfo(charIndex) {
 export function getCharacterRegexScripts(charIndex) {
     const char = characters[charIndex];
     return char?.data?.extensions?.regex_scripts || [];
+}
+
+/**
+ * 为角色启用 OEOS 支持
+ * @param {number} charIndex 角色索引
+ * @returns {Promise<void>}
+ */
+export async function enableOEOSForCharacter(charIndex) {
+    try {
+        toastr.info(`[OEOS] 正在为角色启用 OEOS...`);
+
+        const char = characters[charIndex];
+        if (!char) {
+            throw new Error('角色不存在');
+        }
+
+        // 1. 检查角色是否已有 World Info
+        let worldInfoName = char.data?.extensions?.world;
+
+        if (!worldInfoName) {
+            // 创建新的 World Info 文件，使用角色名称
+            worldInfoName = `${char.name}-OEOS`;
+
+            // 创建空的 World Info 文件
+            await saveWi(worldInfoName, { entries: {} });
+
+            // 将 World Info 绑定到角色
+            // 注意：这里需要使用 SillyTavern 的 API 来修改角色数据
+            if (!char.data) char.data = {};
+            if (!char.data.extensions) char.data.extensions = {};
+            char.data.extensions.world = worldInfoName;
+
+            // 保存角色数据到服务器
+            const saveDataRequest = {
+                avatar: char.avatar,
+                data: {
+                    extensions: {
+                        world: worldInfoName,
+                    },
+                },
+            };
+
+            const response = await fetch('/api/characters/merge-attributes', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify(saveDataRequest),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save character data');
+            }
+
+            toastr.success(`[OEOS] 已为角色创建 World Info: ${worldInfoName}`);
+        }
+
+        // 2. 在 World Info 中添加 OEOS-character 标记条目
+        let worldInfo = await loadWi(worldInfoName);
+        if (!worldInfo || !worldInfo.entries) {
+            worldInfo = { entries: {} };
+        }
+
+        // 检查是否已存在 OEOS-character 条目
+        let hasOEOSMarker = false;
+        for (const entry of Object.values(worldInfo.entries)) {
+            if (entry.keys && entry.keys.includes('OEOS-character')) {
+                hasOEOSMarker = true;
+                break;
+            }
+        }
+
+        if (!hasOEOSMarker) {
+            // 创建 OEOS-character 标记条目
+            const uid = Date.now();
+            worldInfo.entries[uid] = {
+                uid: uid,
+                key: ['OEOS-character', 'OEOS', 'interactive'],
+                keysecondary: [],
+                comment: 'OEOS Character Marker',
+                content: `This character is enabled for OEOS (Open Erotic Story) interactive gameplay.\n\nOEOS Features:\n- AI-driven dynamic story generation\n- Interactive choices and branching narratives\n- State persistence and game progression\n- Character-specific story context`,
+                constant: false,
+                vectorized: false,
+                selective: true,
+                selectiveLogic: 0,
+                addMemo: true,
+                order: 0,
+                position: 0,
+                disable: false,
+                excludeRecursion: false,
+                preventRecursion: false,
+                probability: 100,
+                useProbability: true,
+                depth: 4,
+                group: '',
+                groupOverride: false,
+                groupWeight: 100,
+                scanDepth: null,
+                caseSensitive: null,
+                matchWholeWords: null,
+                useGroupScoring: null,
+                automationId: '',
+                role: null,
+                sticky: 0,
+                cooldown: 0,
+                delay: 0,
+                displayIndex: Object.keys(worldInfo.entries).length,
+            };
+
+            await saveWi(worldInfoName, worldInfo);
+            toastr.success(`[OEOS] 已为角色添加 OEOS 标记`);
+        }
+
+        toastr.success(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
+    } catch (error) {
+        toastr.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
+        console.error('[OEOS] Error enabling OEOS for character:', error);
+        throw error;
+    }
 }
 
 /**
@@ -372,4 +534,6 @@ Object.assign(window.oeosApi, {
     getCharacterWorldInfo,
     getCharacterRegexScripts,
     bindCharacter,
+    isOEOSCharacter,           // 新增：检查是否为 OEOS 角色
+    enableOEOSForCharacter,    // 新增：启用 OEOS 支持
 });

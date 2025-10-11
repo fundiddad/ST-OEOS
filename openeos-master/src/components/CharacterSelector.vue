@@ -11,22 +11,38 @@
           <v-list-item
             v-for="(char, index) in characters"
             :key="index"
-            @click="selectCharacter(index)"
             class="character-item"
+            :class="{ 'oeos-character': char.isOEOS }"
           >
             <v-list-item-avatar>
               <v-img :src="getCharacterAvatar(char.avatar)"></v-img>
             </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>{{ char.name }}</v-list-item-title>
+            <v-list-item-content @click="selectCharacter(index)">
+              <v-list-item-title>
+                {{ char.name }}
+                <v-chip v-if="char.isOEOS" x-small color="success" class="ml-2">
+                  OEOS
+                </v-chip>
+              </v-list-item-title>
               <v-list-item-subtitle>
                 {{ char.description ? char.description.substring(0, 100) : '无描述' }}...
               </v-list-item-subtitle>
               <v-list-item-subtitle class="text--secondary">
                 聊天记录: {{ char.chat_size || 0 }} |
                 最后聊天: {{ formatDate(char.date_last_chat) }}
+                <span v-if="char.worldInfo"> | World Info: {{ char.worldInfo }}</span>
               </v-list-item-subtitle>
             </v-list-item-content>
+            <v-list-item-action v-if="!char.isOEOS">
+              <v-btn
+                small
+                color="primary"
+                @click.stop="enableOEOS(index)"
+                :loading="enablingOEOS[index]"
+              >
+                启用 OEOS
+              </v-btn>
+            </v-list-item-action>
           </v-list-item>
         </v-list>
         <v-alert v-else type="info">
@@ -46,7 +62,8 @@ export default {
     return {
       characters: [],
       loading: true,
-      error: null
+      error: null,
+      enablingOEOS: {}  // 跟踪每个角色的启用状态
     }
   },
   mounted() {
@@ -62,7 +79,9 @@ export default {
         if (!window.oeosApi || !window.oeosApi.getCharacters) {
           throw new Error('OEOS API not available');
         }
-        this.characters = window.oeosApi.getCharacters();
+
+        // getCharacters 现在是异步的，因为需要检查 OEOS 状态
+        this.characters = await window.oeosApi.getCharacters();
       } catch (err) {
         this.error = err.message || '加载角色列表失败';
         console.error('[CharacterSelector] Error loading characters:', err);
@@ -72,10 +91,41 @@ export default {
     },
     selectCharacter(index) {
       const character = this.characters[index];
+
+      // 只有 OEOS 角色才能被选择
+      if (!character.isOEOS) {
+        // 可以选择提示用户先启用 OEOS
+        return;
+      }
+
       this.$emit('character-selected', {
-        index: index,
+        index: character.index,  // 使用角色的实际索引
         character: character
       });
+    },
+    async enableOEOS(index) {
+      try {
+        // 设置加载状态
+        this.$set(this.enablingOEOS, index, true);
+
+        const character = this.characters[index];
+
+        if (!window.oeosApi || !window.oeosApi.enableOEOSForCharacter) {
+          throw new Error('OEOS API not available');
+        }
+
+        // 调用 API 启用 OEOS
+        await window.oeosApi.enableOEOSForCharacter(character.index);
+
+        // 重新加载角色列表以更新状态
+        await this.loadCharacters();
+
+      } catch (err) {
+        this.error = err.message || '启用 OEOS 失败';
+        console.error('[CharacterSelector] Error enabling OEOS:', err);
+      } finally {
+        this.$set(this.enablingOEOS, index, false);
+      }
     },
     getCharacterAvatar(avatar) {
       return `/characters/${avatar}`;
@@ -95,11 +145,22 @@ export default {
 
 .character-item {
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, border-left 0.3s;
+  border-left: 4px solid transparent;
 }
 
 .character-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* OEOS 角色的绿色标识 */
+.character-item.oeos-character {
+  background-color: rgba(76, 175, 80, 0.1);  /* 浅绿色背景 */
+  border-left-color: #4CAF50;  /* 绿色左边框 */
+}
+
+.character-item.oeos-character:hover {
+  background-color: rgba(76, 175, 80, 0.2);  /* 悬停时更深的绿色 */
 }
 </style>
 
