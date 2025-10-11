@@ -2,8 +2,10 @@ const fs = require('fs-extra');
 const path = require('path');
 
 // Define paths
-// Source for build artifacts
+// Source for build artifacts (Vue build output)
 const sourceDir = path.join(__dirname, 'dist');
+// Source for plugin core files (tracked in git)
+const pluginCoreDir = path.join(__dirname, '..', 'oeos-plugin-core');
 
 // Final destination in SillyTavern
 const finalTargetDir = path.join(
@@ -29,7 +31,15 @@ try {
   // Ensure final destination exists
   fs.ensureDirSync(finalTargetDir);
 
-  // Copy contents of dist into finalTargetDir
+  // Copy plugin core first (if present)
+  if (fs.existsSync(pluginCoreDir)) {
+    console.log(`Copying plugin core from "${pluginCoreDir}" ...`);
+    fs.copySync(pluginCoreDir, finalTargetDir, { overwrite: true });
+  } else {
+    console.warn(`Plugin core directory not found: ${pluginCoreDir}. Skipping.`);
+  }
+
+  // Then copy Vue build artifacts into the same extension folder
   fs.copySync(sourceDir, finalTargetDir, { overwrite: true });
 
   console.log('Extension deployed to SillyTavern successfully.');

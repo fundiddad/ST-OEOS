@@ -88,23 +88,9 @@ import OpenEosPlayer from './components/OpenEosPlayer'
 import Loading from './components/common/Loading'
 import CharacterSelector from './components/CharacterSelector'
 import { version } from '../package.json'
-import {
-  downloadObjectAsJson,
-  convertToValidFilename,
-  getFormattedDateForFile,
-  acronym,
-} from './util/io'
 import prettysize from 'prettysize'
-import CryptoJS from 'crypto-js'
 import OEOSV4Parser from './util/v4-parser.js'
 
-// ✅ 导入插件桥接函数（使用 ES6 模块，不使用 window 对象）
-import {
-  initGameData,
-  getPage,
-  updateState,
-  bindCharacter
-} from '../../SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/plugin-bridge.js'
 
 export default {
   name: 'App',
@@ -197,8 +183,10 @@ export default {
       this.showCharacterSelector = false;
 
       try {
-        // ✅ 直接调用导入的函数，不使用 window 对象
-        await bindCharacter(index);
+        // ✅ 使用全局 API（解耦方案）
+        if (window.oeosApi && window.oeosApi.bindCharacter) {
+          await window.oeosApi.bindCharacter(index);
+        }
 
         // 启动游戏
         await this.startAiDrivenTease();
@@ -219,19 +207,22 @@ export default {
     // New method to start the game via the ST plugin
     async startAiDrivenTease() {
       this.loading = true;
-      // ✅ 直接使用导入的函数，不使用 window 对象
+      // ✅ 使用全局 API（解耦方案）
       try {
-        await initGameData();
-        const startPageScript = await getPage('start');
+        if (!window.oeosApi || !window.oeosApi.getPage || !window.oeosApi.initGameData) {
+          throw new Error('OEOS API not available. Please ensure the plugin is loaded.');
+        }
+        await window.oeosApi.initGameData();
+        const startPageScript = await window.oeosApi.getPage('start');
 
         if (!startPageScript) {
-            throw new Error('Start page not found.');
+          throw new Error('Start page not found.');
         }
 
         const script = OEOSV4Parser.toV1(startPageScript);
         this.title = 'AI Adventure';
         this.author = 'The AI Dungeon Master';
-        this.teaseId = 'ai-adventure-01'; // A static ID for now
+        this.teaseId = 'ai-adventure-01';
         this.script = script;
 
       } catch (e) {
@@ -260,7 +251,9 @@ export default {
             variables: variables,
         };
 
-        updateState(newState);
+        if (window.oeosApi && window.oeosApi.updateState) {
+          window.oeosApi.updateState(newState);
+        }
     },
 
     setExternalLink(link) {
