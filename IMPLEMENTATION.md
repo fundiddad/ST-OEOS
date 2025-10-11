@@ -1,447 +1,271 @@
-# OEOS-SillyTavern 实现指南
+# OEOS-SillyTavern 项目进度
+
+> **当前阶段**: 🔍 **探索阶段** - 项目处于架构设计和原型开发阶段，以下功能尚未经过完整测试。
 
 ## 📋 目录
 
-1. [实现状态](#实现状态)
-2. [已实现功能](#已实现功能)
-3. [待实现功能](#待实现功能)
-4. [关键代码示例](#关键代码示例)
-5. [故障排除](#故障排除)
+1. [项目进度](#项目进度)
+2. [文件结构](#文件结构)
+3. [注意事项](#注意事项)
+4. [变更记录](#变更记录)
 
 ---
 
-## 实现状态
+## 项目进度
 
-### ✅ 已完成的核心功能
+### 已编写的代码模块
 
-1. **插件桥接系统** - `plugin-bridge.js` 完整实现
-2. **角色选择界面** - `CharacterSelector.vue` 已创建
-3. **角色数据绑定** - `bindCharacter()` 函数已实现
-4. **游戏状态管理** - `game-state.js` 完整实现
-5. **World Info 集成** - 所有 WI 条目创建和更新逻辑已实现
-6. **Vue 应用集成** - `App.vue` 已集成角色选择流程
-7. **全局 API 暴露** - `window.oeosApi` 已正确暴露
-8. **toastr 通知系统** - 统一使用 ST 的 toastr
-9. **OEOS 角色标记系统** ✨ 新增
-   - `isOEOSCharacter()` - 检查角色是否为 OEOS 角色
-   - `enableOEOSForCharacter()` - 为角色启用 OEOS 支持
-   - 角色选择界面的 OEOS 角色视觉标识（绿色背景）
-   - 为非 OEOS 角色提供"启用 OEOS"开关
+> **说明**: 以下模块的代码已编写，但**尚未经过完整测试**，可能存在未知 bug。
 
-### ⚠️ 部分实现的功能
+#### 插件核心 (`src/oeos-plugin-core/`)
 
-1. **角色 World Info 激活** - 函数存在但未完全实现
-2. **角色正则表达式激活** - 函数存在但未完全实现
-3. **动态上下文引擎** - `context-engine.js` 需要完善
+- ✏️ **plugin-bridge.js** - 核心桥接模块（未测试）
+  - 功能：连接 Vue 应用和 SillyTavern，暴露 `window.oeosApi`
+  - 主要函数：`getCharacters()`, `bindCharacter()`, `isOEOSCharacter()`, `enableOEOSForCharacter()`
 
-### ❌ 待实现的功能
+- ✏️ **game-state.js** - 状态管理模块（未测试）
+  - 功能：更新 World Info 中的游戏状态
+  - 主要函数：`updatePageEntry()`, `updateStateEntry()`
 
-1. **AI 生成页面的正则表达式规则** - 需要在 ST 中配置
-2. **多角色协作模式** - 高级功能
-3. **角色成长系统** - 高级功能
-4. **可视化编辑器** - 高级功能
+- ✏️ **context-engine.js** - 上下文引擎（未测试）
+  - 功能：根据游戏状态计算 AI 上下文
+  - 主要函数：`recalculateDynamicContext()`
 
----
+- ✏️ **st-api.js** - API 抽象层（未测试）
+  - 功能：封装 World Info 和事件 API
+  - 主要函数：`saveWi()`, `loadWi()`, `listenToAiResponse()`
 
-## 已实现功能
+#### Vue 组件 (`src/openeos-master/src/components/`)
 
-### 1. 核心架构 ✅
+- ✏️ **CharacterSelector.vue** - 角色选择界面（未测试）
+  - 功能：显示角色列表，支持 OEOS 角色视觉标识和启用开关
 
-**文件**: `src/oeos-plugin-core/plugin-bridge.js`
+- ✏️ **App.vue** - 主应用（已集成角色选择）
+  - 功能：处理角色选择流程，加载游戏播放器
 
-**已实现**:
-- ✅ ES6 模块导出
-- ✅ 全局 API 暴露 (`window.oeosApi`)
-- ✅ `initGameData()` - 初始化游戏数据
-- ✅ `getPage(pageId)` - 获取页面内容
-- ✅ `updateState(newState)` - 更新游戏状态
-- ✅ `getCharacters()` - 获取角色列表（包含 OEOS 状态）
-- ✅ `getCurrentCharacter()` - 获取当前角色
-- ✅ `bindCharacter(charIndex)` - 绑定角色
-- ✅ `isOEOSCharacter(charIndex)` - 检查角色是否为 OEOS 角色 ✨ 新增
-- ✅ `enableOEOSForCharacter(charIndex)` - 为角色启用 OEOS 支持 ✨ 新增
-- ✅ toastr 通知系统集成
+#### 功能模块
 
-### 2. 角色选择界面 ✅
+- ✏️ **OEOS 角色标记系统**（未测试）
+  - `isOEOSCharacter()` - 检测角色是否为 OEOS 角色
+  - `enableOEOSForCharacter()` - 为角色启用 OEOS 支持
+  - 角色选择界面的 OEOS 角色视觉标识（绿色背景+边框+标签）
+  - 为非 OEOS 角色提供"启用 OEOS"开关
 
-**文件**: `src/openeos-master/src/components/CharacterSelector.vue`
+### 待实现的功能
 
-**已实现**:
-- ✅ 显示所有可用角色
-- ✅ 显示角色头像、名称、描述
-- ✅ 显示聊天记录数量和最后聊天时间
-- ✅ 点击角色触发选择事件
-- ✅ 加载状态和错误处理
-- ✅ 使用 `window.oeosApi` 访问数据
-- ✅ **OEOS 角色视觉标识** ✨ 新增
-  - 绿色背景和左边框
-  - "OEOS" 标签显示
-  - 显示角色的 World Info 名称
-- ✅ **启用 OEOS 开关** ✨ 新增
-  - 为非 OEOS 角色显示"启用 OEOS"按钮
-  - 点击后自动创建 World Info 并添加标记
-  - 加载状态指示
+#### 核心功能
+- ⏳ AI 生成页面的正则表达式规则配置
+- ⏳ 动态上下文引擎完善
+- ⏳ 角色 World Info 激活机制
+- ⏳ 角色正则表达式激活机制
+- ⏳ 页面编译和执行流程测试
 
-### 3. Vue 应用集成 ✅
+#### 高级功能
+- 📋 多角色协作模式
+- 📋 角色成长系统
+- 📋 可视化编辑器
+- 📋 页面图谱可视化
 
-**文件**: `src/openeos-master/src/App.vue`
+### 已知问题
 
-**已实现**:
-- ✅ 导入 `CharacterSelector` 组件
-- ✅ 添加角色选择相关 data 字段
-- ✅ `onCharacterSelected()` 方法
-- ✅ `returnToCharacterSelection()` 方法
-- ✅ `startAiDrivenTease()` 方法
-- ✅ 使用 `window.oeosApi` 调用插件 API
-- ✅ 初始显示角色选择界面
+1. **World Info 架构调整**
+   - 之前错误地创建了全局 WI 文件存储角色数据
+   - 已修正为使用角色专属 World Info
 
-### 4. 游戏状态管理 ✅
+2. **未经测试**
+   - 所有代码模块均未进行完整的功能测试
+   - 需要建立测试流程
 
-**文件**: `src/oeos-plugin-core/game-state.js`
-
-**已实现**:
-- ✅ `updatePageEntry(id, content, abstract)` - 更新页面条目
-- ✅ `updateStateEntry(newState)` - 更新状态条目
-- ✅ 自动更新 `WI-OEOS-Pages`
-- ✅ 自动更新 `WI-OEOS-Abstracts`
-- ✅ 自动更新 `WI-OEOS-Graph`
-- ✅ 自动更新 `WI-OEOS-State`
-- ✅ 使用 toastr 显示操作结果
-
-### 5. World Info 集成 ✅
-
-**全局 WI 条目**（用于所有 OEOS 游戏）:
-- ✅ `WI-OEOS-Pages` - 页面数据库
-- ✅ `WI-OEOS-State` - 玩家状态和路径
-- ✅ `WI-OEOS-Graph` - 故事图谱
-- ✅ `WI-OEOS-Abstracts` - 页面摘要
-- ✅ `WI-OEOS-DynamicContext` - 动态上下文（待完善）
-- ✅ `WI-OEOS-CharacterContext` - 角色上下文（已弃用，改用角色专属 WI）
-- ✅ `WI-OEOS-ChatHistory` - 聊天历史（已弃用，改用角色专属 WI）
-
-**角色专属 WI** ✨ 新增:
-- ✅ 每个 OEOS 角色都有自己的 World Info 文件（如 `Seraphina-OEOS.json`）
-- ✅ 通过 `character.data.extensions.world` 绑定到角色
-- ✅ 包含 `OEOS-character` 标记条目用于识别 OEOS 角色
-
-### 6. OEOS 角色标记系统 ✅ ✨ 新增
-
-**功能概述**:
-OEOS 角色标记系统用于区分普通角色和 OEOS 支持的角色，并提供一键启用功能。
-
-**实现细节**:
-
-1. **角色检测** - `isOEOSCharacter(charIndex)`
-   - 检查角色是否有 World Info（`character.data.extensions.world`）
-   - 加载角色的 World Info 文件
-   - 查找包含 `OEOS-character` 关键字的条目
-   - 返回布尔值
-
-2. **角色启用** - `enableOEOSForCharacter(charIndex)`
-   - 如果角色没有 World Info，创建新的 WI 文件（命名为 `{角色名}-OEOS`）
-   - 将 World Info 绑定到角色（通过 `/api/characters/merge-attributes` API）
-   - 在 World Info 中添加 `OEOS-character` 标记条目
-   - 使用 toastr 显示操作进度
-
-3. **视觉标识**
-   - OEOS 角色：绿色背景 + 绿色左边框 + "OEOS" 标签
-   - 非 OEOS 角色：普通背景 + "启用 OEOS" 按钮
-
-4. **数据结构**
-
-`OEOS-character` 标记条目示例：
-```json
-{
-  "uid": 1234567890,
-  "key": ["OEOS-character", "OEOS", "interactive"],
-  "comment": "OEOS Character Marker",
-  "content": "This character is enabled for OEOS...",
-  "constant": false,
-  "selective": true,
-  "order": 0,
-  "enabled": true
-}
-```
+3. **正则表达式规则未配置**
+   - 需要在 SillyTavern 中配置提取 `<oeos page>` 标签的正则表达式
 
 ---
 
-## 待实现功能
+## 文件结构
 
-### 1. 角色 World Info 激活 ⚠️
+### 项目根目录
 
-**文件**: `src/oeos-plugin-core/plugin-bridge.js`
-
-**当前状态**: 函数存在但仅显示 toastr 消息
-
-**需要实现**:
-```javascript
-async function activateCharacterWorldInfo(worldInfoName) {
-    // TODO: 需要导入 selected_world_info
-    // import { selected_world_info } from '../../../world-info.js';
-    
-    if (!selected_world_info.includes(worldInfoName)) {
-        selected_world_info.push(worldInfoName);
-        saveSettingsDebounced();
-        toastr.success(`[OEOS] World Info 已激活: ${worldInfoName}`);
-    }
-}
+```
+ST_oeos/
+├── src/                          # 源代码目录（Git 仓库）
+│   ├── oeos-plugin-core/         # OEOS 插件核心
+│   ├── openeos-master/           # OEOS Vue 播放器
+│   ├── SillyTavern-release/      # SillyTavern 主程序
+│   ├── ARCHITECTURE.md           # 架构设计文档
+│   ├── IMPLEMENTATION.md         # 项目进度文档（本文件）
+│   ├── README.md                 # 项目说明
+│   └── oeos-commands.v4.md       # OEOScript v4 语法参考
 ```
 
-### 2. 角色正则表达式激活 ⚠️
+### 插件核心 (`src/oeos-plugin-core/`)
 
-**文件**: `src/oeos-plugin-core/plugin-bridge.js`
-
-**当前状态**: 函数存在但仅显示 toastr 消息
-
-**需要实现**:
-```javascript
-function activateCharacterRegex(charIndex) {
-    // TODO: 需要导入 extension_settings
-    // import { extension_settings } from '../../extensions.js';
-    
-    if (!extension_settings.character_allowed_regex) {
-        extension_settings.character_allowed_regex = [];
-    }
-
-    const char = characters[charIndex];
-    if (char && !extension_settings.character_allowed_regex.includes(char.avatar)) {
-        extension_settings.character_allowed_regex.push(char.avatar);
-        saveSettingsDebounced();
-        toastr.success(`[OEOS] 角色正则已激活: ${char.name}`);
-    }
-}
+```
+oeos-plugin-core/
+├── plugin-bridge.js              # 核心桥接模块
+│   ├── 功能：连接 Vue 应用和 SillyTavern
+│   ├── 导出：window.oeosApi
+│   └── 依赖：st-api.js, game-state.js, context-engine.js
+│
+├── game-state.js                 # 游戏状态管理
+│   ├── 功能：更新 World Info 中的游戏状态
+│   ├── 导出：updatePageEntry, updateStateEntry
+│   └── 依赖：st-api.js
+│
+├── context-engine.js             # 动态上下文引擎
+│   ├── 功能：根据游戏状态计算 AI 上下文
+│   ├── 导出：recalculateDynamicContext
+│   └── 依赖：st-api.js
+│
+└── st-api.js                     # SillyTavern API 抽象层
+    ├── 功能：封装 World Info 和事件 API
+    ├── 导出：saveWi, loadWi, listenToAiResponse
+    └── 依赖：SillyTavern 核心模块
 ```
 
-### 3. 动态上下文引擎 ⚠️
+### Vue 播放器 (`src/openeos-master/`)
 
-**文件**: `src/oeos-plugin-core/context-engine.js`
-
-**需要实现**: 完整的动态上下文计算逻辑（参考 ARCHITECTURE.md）
-
-### 4. AI 生成页面的正则表达式规则 ❌
-
-**需要在 SillyTavern 中配置**:
-
-**规则 A (数据提取)**:
-- 捕获 `<oeos page id="xxx">...</oeos page>` 和 `<oeos abstract>...</oeos abstract>`
-- 调用 `window.oeosApi.updatePage(id, content, abstract)`
-- 将匹配到的内容替换为空字符串
-
-**规则 B (显示格式化)**:
-- 保留 `<oeos abstract>` 的内容并美化
-- 作为 AI 的回复显示在聊天记录中
-
----
-
-## 关键代码示例
-
-### 1. OEOS 角色管理 ✨
-
-#### 检查角色是否为 OEOS 角色
-
-```javascript
-// 检查单个角色
-const isOEOS = await window.oeosApi.isOEOSCharacter(charIndex);
-if (isOEOS) {
-    console.log('这是一个 OEOS 角色');
-}
-
-// 获取所有角色并检查 OEOS 状态
-const characters = await window.oeosApi.getCharacters();
-characters.forEach(char => {
-    console.log(`${char.name}: ${char.isOEOS ? 'OEOS' : '普通'}`);
-    if (char.isOEOS) {
-        console.log(`  World Info: ${char.worldInfo}`);
-    }
-});
+```
+openeos-master/
+├── src/
+│   ├── App.vue                   # 主应用
+│   ├── components/
+│   │   ├── CharacterSelector.vue # 角色选择组件
+│   │   ├── OpenEosPlayer.vue     # 游戏播放器
+│   │   └── bubbles/              # 对话气泡组件
+│   ├── interpreter/              # JS-Interpreter 沙箱
+│   └── util/
+│       └── pageCompiler.js       # OEOScript 编译器
+│
+├── dist/                         # 构建输出（自动部署到 ST）
+├── deploy.js                     # 自动部署脚本
+└── package.json                  # 依赖配置
 ```
 
-#### 为角色启用 OEOS 支持
+### SillyTavern 集成
 
-```javascript
-// 为角色启用 OEOS
-const charIndex = 0;
-await window.oeosApi.enableOEOSForCharacter(charIndex);
-
-// 验证启用结果
-const isOEOS = await window.oeosApi.isOEOSCharacter(charIndex);
-console.log('OEOS 已启用:', isOEOS); // true
+```
+SillyTavern-release/
+└── public/scripts/extensions/third-party/oeos-st-extension/
+    ├── index.html                # OEOS 播放器入口
+    ├── js/app.js                 # Vue 应用（来自 dist/）
+    ├── plugin-bridge.js          # 插件核心（来自 oeos-plugin-core/）
+    ├── game-state.js
+    ├── context-engine.js
+    └── st-api.js
 ```
 
-#### 角色 World Info 结构
+### World Info 文件
 
-```javascript
-// OEOS 角色的 World Info 文件示例
-{
-    "entries": {
-        "1234567890": {
-            "uid": 1234567890,
-            "key": ["OEOS-character", "OEOS", "interactive"],
-            "comment": "OEOS Character Marker",
-            "content": "This character is enabled for OEOS...",
-            "constant": false,
-            "selective": true,
-            "order": 0,
-            "enabled": true
-        }
-    }
-}
 ```
-
-### 2. 使用 toastr 通知系统
-
-```javascript
-// ✅ 正确：使用 toastr 提供用户反馈
-toastr.info('[OEOS] 正在初始化...');
-toastr.success('[OEOS] 初始化成功');
-toastr.warning('[OEOS] 警告信息');
-toastr.error(`[OEOS] 错误: ${error.message}`);
-
-// ❌ 错误：仅用 console（用户看不到）
-console.log('初始化成功'); // 仅用于调试
-```
-
-### 3. 使用全局 API (window.oeosApi)
-
-```javascript
-// Vue 组件中访问插件 API
-if (window.oeosApi && window.oeosApi.getCharacters) {
-    const characters = await window.oeosApi.getCharacters(); // 注意：现在是异步的
-}
-
-// 检查 OEOS 角色
-const isOEOS = await window.oeosApi.isOEOSCharacter(charIndex);
-
-// 启用 OEOS 支持
-await window.oeosApi.enableOEOSForCharacter(charIndex);
-
-// 绑定角色
-await window.oeosApi.bindCharacter(charIndex);
-
-// 获取页面
-const pageContent = await window.oeosApi.getPage('start');
-
-// 更新状态
-await window.oeosApi.updateState({
-    pageId: 'current',
-    variables: { score: 100 },
-    path: ['start', 'current']
-});
-```
-
-### 4. World Info 操作
-
-```javascript
-import { loadWorldInfo, saveWorldInfo } from '../../../world-info.js';
-
-// 加载全局 World Info
-const data = await loadWorldInfo('WI-OEOS-Pages');
-
-// 加载角色专属 World Info
-const char = characters[charIndex];
-const worldInfoName = char.data?.extensions?.world;
-if (worldInfoName) {
-    const charWI = await loadWorldInfo(worldInfoName);
-}
-
-// 创建新条目（注意：使用 key 而不是 keys）
-const uid = Date.now();
-if (!data.entries) data.entries = {};
-data.entries[uid] = {
-    uid: uid,
-    key: ["keyword1", "keyword2"],  // 注意：是 key 不是 keys
-    keysecondary: [],
-    comment: "条目注释",
-    content: "条目内容",
-    constant: true,  // 永久激活
-    selective: true,
-    order: 0,
-    enabled: true,
-    probability: 100,
-    position: 0,
-    role: 0
-};
-
-// 保存 World Info
-await saveWorldInfo('WI-OEOS-Pages', data, true);
-```
-
-### 5. OEOScript v4 格式示例
-
-```yaml
-> start
-  say "欢迎来到冒险世界！"
-  choice:
-    - "进入森林":
-      - goto: forest
-    - "访问村庄":
-      - goto: village
-
-> forest
-  say "你进入了茂密的森林..."
-  if: <eval>player.courage > 50</eval>
-    say "你感到勇气倍增！"
-  choice:
-    - "继续前进":
-      - goto: cave
-    - "返回":
-      - goto: start
+SillyTavern-release/data/{user}/worlds/
+├── WI-OEOS-Pages.json            # 全局：页面数据库
+├── WI-OEOS-State.json            # 全局：游戏状态
+├── WI-OEOS-Graph.json            # 全局：页面关系图
+├── WI-OEOS-Abstracts.json        # 全局：页面摘要
+├── WI-OEOS-DynamicContext.json   # 全局：动态上下文
+└── {角色名}-OEOS.json            # 角色专属：角色数据
 ```
 
 ---
 
-## 故障排除
+## 注意事项
 
-### 问题 1: 角色列表为空
+### 开发规范
 
-**症状**: CharacterSelector 显示"没有找到可用的角色"
+#### 1. 代码注释
+- 所有函数必须有中文注释
+- 说明功能、参数、返回值
+- 复杂逻辑需要添加行内注释
 
-**原因**: `window.oeosApi` 未正确初始化
+#### 2. 错误处理
+- 使用 `try-catch` 捕获异常
+- 使用 `toastr` 显示错误信息给用户
+- 在控制台记录详细错误信息（用于调试）
 
-**解决方案**:
-1. 检查插件是否正确加载
-2. 在浏览器控制台执行: `console.log(window.oeosApi)`
-3. 确认 `plugin-bridge.js` 已正确导入并执行
+示例：
+```javascript
+try {
+    await someOperation();
+    toastr.success('[OEOS] 操作成功');
+} catch (error) {
+    console.error('[OEOS] 详细错误:', error);
+    toastr.error(`[OEOS] 操作失败: ${error.message}`);
+}
+```
 
-### 问题 2: 绑定角色失败
+#### 3. 异步操作
+- 统一使用 `async/await`
+- 避免回调地狱和 Promise 链
 
-**症状**: 点击角色后显示错误
+示例：
+```javascript
+// ✅ 正确
+async function loadData() {
+    const data = await loadWorldInfo('WI-Name');
+    return data;
+}
 
-**原因**: World Info 操作失败
+// ❌ 错误
+function loadData() {
+    loadWorldInfo('WI-Name').then(data => { ... });
+}
+```
 
-**解决方案**:
-1. 检查 `loadWorldInfo` 和 `saveWorldInfo` 函数是否正确导入
-2. 查看浏览器控制台的错误信息
-3. 确认 World Info 文件权限正确
+#### 4. 模块导入
+- 插件核心使用 ES6 `import/export`
+- Vue 应用通过 `window.oeosApi` 访问插件
 
-### 问题 3: AI 生成的页面未被保存
+### 架构原则
 
-**症状**: 游戏无法前进到下一页
+#### 1. 数据存储
+- ✅ 全局数据 → 全局 World Info（`WI-OEOS-*`）
+- ✅ 角色数据 → 角色专属 World Info（`{角色名}-OEOS.json`）
+- ❌ 不要创建全局 WI 存储角色数据
 
-**原因**: 正则表达式规则未配置或未激活
+#### 2. 通知系统
+- ✅ 使用 `toastr` 提供用户反馈
+- ❌ 不要仅用 `console.log`（用户看不到）
 
-**解决方案**:
-1. 在 ST 的正则表达式设置中添加页面提取规则
-2. 确认规则已启用
-3. 测试正则表达式是否正确匹配 `<oeos page>` 标签
+#### 3. 事件处理
+- ✅ 订阅 SillyTavern 事件（`eventSource.on()`）
+- ❌ 不要使用轮询（`setInterval()`）
 
-### 问题 4: toastr 通知不显示
+### 测试注意事项
 
-**症状**: 操作没有任何反馈
+#### 1. 当前状态
+- 所有代码均未经过完整测试
+- 可能存在未知 bug
+- 需要建立系统的测试流程
 
-**原因**: toastr 未正确引用
+#### 2. 测试建议
+- 先测试基础功能（角色选择、World Info 读写）
+- 再测试复杂功能（AI 生成、动态上下文）
+- 使用浏览器控制台调试
 
-**解决方案**:
-1. 确认 SillyTavern 的 toastr 库已加载
-2. 在控制台测试: `toastr.info('测试')`
-3. 检查是否有 JavaScript 错误阻止执行
+#### 3. 调试工具
+- `console.log(window.oeosApi)` - 检查 API 是否加载
+- `toastr.info('测试')` - 测试通知系统
+- Chrome DevTools - 查看网络请求和错误
+- SillyTavern 控制台 - 查看服务器日志
 
 ---
 
-**文档版本**: 2.0 (简化版)  
-**最后更新**: 2025-10-11
+## 变更记录
 
-**修改历史**:
-- v2.0 (2025-10-11): 大幅简化，移除重复内容，更新实现状态，添加 toastr 通知系统
-- v1.0 (2025-10-10): 初始版本
+### v3.0 (2025-10-11)
+- 彻底重构文档，聚焦项目进度
+- 明确标注"探索阶段"，所有功能未经测试
+- 将"已实现功能"改为"已编写的代码模块"
+- 移除"关键代码示例"（未验证正确性）
+- 移除"故障排除"（无实际测试数据）
+- 添加详细的文件结构说明
+- 添加开发规范和测试注意事项
+
+### v2.0 (2025-10-11)
+- 大幅简化，移除重复内容
+- 更新实现状态
+- 添加 toastr 通知系统
+
+### v1.0 (2025-10-10)
+- 初始版本
 
