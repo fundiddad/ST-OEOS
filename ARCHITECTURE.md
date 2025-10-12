@@ -306,17 +306,20 @@ const allChars = characters;
 - SillyTavern 会自动将聊天记录发送给 AI
 - 如果不过滤，会导致发送大量垃圾内容（如 `<thinking>` 标签、完整的 `<oeos page>` 内容）污染 AI 上下文
 - 正则表达式可以将 AI 回复中的所有内容替换为 `<OEOS-Abstracts>` 标签内的摘要内容
-- **重要**：正则表达式**不会修改**存储在 JSONL 文件中的原始数据，只影响显示和发送给 AI 的聊天记录
+- **重要**：通过设置 `promptOnly: true` 和 `markdownOnly: true`，正则表达式**不会修改**存储在 JSONL 文件中的原始数据，只影响显示和发送给 AI 的聊天记录
 
 **OEOS 使用的正则表达式**:
 ```javascript
 {
   scriptName: 'OEOS-Filter',
-  findRegex: '([\\s\\S]*)<OEOS-Abstracts>([\\s\\S]*?)<\\/OEOS-Abstracts>([\\s\\S]*)',
+  findRegex: '/([\\s\\S]*)<OEOS-Abstracts>([\\s\\S]*?)<\\/OEOS-Abstracts>([\\s\\S]*)/gs',
   replaceString: '$2',  // 只保留 Abstracts 内容
-  trimStrings: true,
-  placement: ['AI_OUTPUT'],  // 只作用于 AI 输出
-  disabled: false
+  trimStrings: [],
+  placement: [2],  // AI_OUTPUT
+  disabled: false,
+  markdownOnly: true,  // 影响显示
+  promptOnly: true,    // 影响发送给 AI 的 prompt
+  runOnEdit: true
 }
 ```
 
@@ -343,13 +346,13 @@ const allChars = characters;
   ```
   forest: Player enters a dense forest;
   ```
-- **原始数据（JSONL）**：保持不变，仍包含完整的 AI 回复
+- **原始数据（JSONL）**：保持不变，仍包含完整的 AI 回复（因为 `promptOnly: true` 和 `markdownOnly: true`）
 - **发送给 AI 的聊天记录**：只包含摘要内容，大幅减少 Token 消耗
 
 **配置方式**:
-- 存储在 `extension_settings.regex` 数组中
-- 通过 `character_allowed_regex` 指定哪些角色可以使用
-- **作用范围**：必须勾选 `AI_OUTPUT`（AI 输出）
+- 存储在角色的 `character.data.extensions.regex_scripts` 数组中
+- **作用范围**：`placement: [2]`（AI_OUTPUT，只作用于 AI 输出）
+- **短暂性设置**：`promptOnly: true` 和 `markdownOnly: true`（不修改 JSONL 文件）
 
 ---
 
@@ -851,7 +854,7 @@ OEOS 播放器渲染页面
 - **时机**：每次进入游戏时（调用 `bindCharacter`）
 - **范围**：遍历该角色的**所有聊天记录**（`chat` 数组）
 - **提取内容**：
-  - 使用正则提取 `<oeos page>...</oeos page>` 标签内容（注意：标签无 `id` 属性）
+  - 使用正则提取 `<OEOS-page>...</OEOS-page>` 标签内容（注意：标签无 `id` 属性）
   - 使用正则提取 `<OEOS-Abstracts>...</OEOS-Abstracts>` 标签内容
 - **存储格式**：
   - OEOS-Pages：存储纯 OEOScript v4 代码（无 XML 标签）
@@ -861,6 +864,7 @@ OEOS 播放器渲染页面
 **2. 正则表达式过滤**
 - **执行时机**：AI 回复后，ST 自动应用正则表达式
 - **过滤规则**：将整个 AI 回复替换为 `<OEOS-Abstracts>` 标签内的摘要内容
+- **短暂性设置**：`promptOnly: true` 和 `markdownOnly: true`
 - **效果**：
   - 显示内容：只显示摘要（如 "forest: Player enters forest;"）
   - 发送给 AI 的聊天记录：只包含摘要，大幅减少 Token 消耗

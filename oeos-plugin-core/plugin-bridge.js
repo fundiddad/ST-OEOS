@@ -41,7 +41,7 @@ async function getPage(pageId) {
 
         const worldInfoName = char.data?.extensions?.world;
         if (!worldInfoName) {
-            console.warn('[OEOS] 角色没有绑定 World Info');
+            // console.warn('[OEOS] 角色没有绑定 World Info');
             return null;
         }
 
@@ -454,8 +454,9 @@ async function addOEOSRegexToCharacter(charIndex) {
             trimStrings: [],
             placement: [2],  // AI_OUTPUT
             disabled: false,
-            markdownOnly: false,
-            promptOnly: false,
+            // 重要：两个都设为 true，这样 JSONL 保存完整原始数据，但显示和发送给 AI 的都是过滤后的摘要
+            markdownOnly: true,  // 影响显示
+            promptOnly: true,    // 影响发送给 AI 的 prompt
             runOnEdit: true,
             substituteRegex: 0,
             minDepth: null,
@@ -608,7 +609,7 @@ export async function enableOEOSForCharacter(charIndex) {
         // 3. 为角色添加 OEOS 正则表达式规则
         await addOEOSRegexToCharacter(charIndex);
 
-        toastr.success(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
+        // toastr.success(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
     } catch (error) {
         toastr.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
         console.error('[OEOS] Error enabling OEOS for character:', error);
@@ -622,7 +623,7 @@ export async function enableOEOSForCharacter(charIndex) {
  */
 export async function bindCharacter(charIndex) {
     try {
-        toastr.info(`[OEOS] 正在绑定角色...`);
+        // toastr.info(`[OEOS] 正在绑定角色...`);
 
         const character = characters[charIndex];
         if (!character) {
@@ -650,7 +651,7 @@ export async function bindCharacter(charIndex) {
         // 5. 监听 AI 回复事件
         setupAIResponseListener(worldInfoName);
 
-        toastr.success(`[OEOS] 角色 ${character.name} 绑定成功`);
+        // toastr.success(`[OEOS] 角色 ${character.name} 绑定成功`);
     } catch (error) {
         toastr.error(`[OEOS] 绑定角色失败: ${error.message}`);
         throw error;
@@ -740,20 +741,29 @@ async function initializeGameDataEntries(worldInfoName) {
 
         if (!exists) {
             const uid = Date.now() + createdCount;
+
+            // 根据条目类型设置不同的激活状态
+            // OEOS-Abstracts 和 OEOS-DynamicContext 需要永久激活（constant: true）
+            // 其他条目需要禁用（disable: true）
+            const isAbstracts = entryDef.comment === 'OEOS-Abstracts';
+            const isDynamicContext = entryDef.comment === 'OEOS-DynamicContext';
+            const shouldBeConstant = isAbstracts || isDynamicContext;
+            const shouldBeDisabled = !shouldBeConstant;
+
             worldInfo.entries[uid] = {
                 uid: uid,
                 key: entryDef.key,
                 keysecondary: [],
                 comment: entryDef.comment,
                 content: entryDef.content,
-                constant: false,
+                constant: shouldBeConstant,  // OEOS-Abstracts 和 OEOS-DynamicContext 永久激活
                 vectorized: false,
                 selective: false,
                 selectiveLogic: 0,
                 addMemo: false,
                 order: 0,
                 position: 0,
-                disable: true,  // 默认禁用，由游戏逻辑控制何时激活
+                disable: shouldBeDisabled,  // OEOS-Abstracts 和 OEOS-DynamicContext 不禁用，其他条目禁用
                 excludeRecursion: false,
                 preventRecursion: false,
                 probability: 100,
@@ -779,9 +789,9 @@ async function initializeGameDataEntries(worldInfoName) {
 
     if (createdCount > 0) {
         await saveWi(worldInfoName, worldInfo);
-        toastr.success(`[OEOS] 已在 ${worldInfoName} 中创建 ${createdCount} 个游戏数据条目`);
+        // toastr.success(`[OEOS] 已在 ${worldInfoName} 中创建 ${createdCount} 个游戏数据条目`);
     } else {
-        toastr.info(`[OEOS] ${worldInfoName} 中的游戏数据条目已存在`);
+        // toastr.info(`[OEOS] ${worldInfoName} 中的游戏数据条目已存在`);
     }
 }
 
