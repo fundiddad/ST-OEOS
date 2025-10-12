@@ -132,21 +132,21 @@ async function updateState(newState) {
 }
 
 /**
- * 从聊天记录中提取所有 <oeos page> 标签
- * 注意：<oeos page> 标签无 id 属性，一个标签内可能包含多个页面
+ * 从聊天记录中提取所有 <OEOS-Pages> 标签
+ * 注意：<OEOS-Pages> 标签无 id 属性，一个标签内可能包含多个页面
  * @param {Array} chatArray - SillyTavern 的 chat 数组
  * @returns {Array} - 提取的页面数组 [{ pageId, content }, ...]
  */
 function extractPagesFromChat(chatArray) {
     const pages = [];
-    // 修正：<oeos page> 标签无 id 属性
-    const pageBlockRegex = /<oeos page>([\s\S]*?)<\/oeos page>/gi;
+    // 修正：<OEOS-Pages> 标签无 id 属性
+    const pageBlockRegex = /<OEOS-Pages>([\s\S]*?)<\/OEOS-Pages>/gi;
 
     for (const message of chatArray) {
         if (!message.mes) continue;
 
         let blockMatch;
-        // 提取每个 <oeos page>...</oeos page> 块
+        // 提取每个 <OEOS-Pages>...</OEOS-Pages> 块
         while ((blockMatch = pageBlockRegex.exec(message.mes)) !== null) {
             const blockContent = blockMatch[1].trim();
 
@@ -743,11 +743,13 @@ async function initializeGameDataEntries(worldInfoName) {
             const uid = Date.now() + createdCount;
 
             // 根据条目类型设置不同的激活状态
-            // OEOS-Abstracts 和 OEOS-DynamicContext 需要永久激活（constant: true）
+            // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 需要永久激活（constant: true）
             // 其他条目需要禁用（disable: true）
+            const isState = entryDef.comment === 'OEOS-State';
+            const isGraph = entryDef.comment === 'OEOS-Graph';
             const isAbstracts = entryDef.comment === 'OEOS-Abstracts';
             const isDynamicContext = entryDef.comment === 'OEOS-DynamicContext';
-            const shouldBeConstant = isAbstracts || isDynamicContext;
+            const shouldBeConstant = isState || isGraph || isAbstracts || isDynamicContext;
             const shouldBeDisabled = !shouldBeConstant;
 
             worldInfo.entries[uid] = {
@@ -756,14 +758,14 @@ async function initializeGameDataEntries(worldInfoName) {
                 keysecondary: [],
                 comment: entryDef.comment,
                 content: entryDef.content,
-                constant: shouldBeConstant,  // OEOS-Abstracts 和 OEOS-DynamicContext 永久激活
+                constant: shouldBeConstant,  // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 永久激活
                 vectorized: false,
                 selective: false,
                 selectiveLogic: 0,
                 addMemo: false,
                 order: 0,
                 position: 0,
-                disable: shouldBeDisabled,  // OEOS-Abstracts 和 OEOS-DynamicContext 不禁用，其他条目禁用
+                disable: shouldBeDisabled,  // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 不禁用，其他条目禁用
                 excludeRecursion: false,
                 preventRecursion: false,
                 probability: 100,

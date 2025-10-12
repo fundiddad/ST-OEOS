@@ -119,12 +119,12 @@ World Info 条目通过以下方式激活：
   **2. OEOS-Pages** - 页面数据库
   - **用途**：存储该角色游戏的所有 OEOScript 页面
   - **激活状态**：`disable: true`（永不激活）
-  - **数据来源**：从聊天记录中提取 `<oeos page>...</oeos page>` 标签内容（注意：标签无 `id` 属性）
-  - **提取时机**：每次进入游戏时，遍历该角色的**所有聊天记录**，提取所有 `<oeos page>` 标签内容
+  - **数据来源**：从聊天记录中提取 `<OEOS-Pages>...</OEOS-Pages>` 标签内容（注意：标签无 `id` 属性）
+  - **提取时机**：每次进入游戏时，遍历该角色的**所有聊天记录**，提取所有 `<OEOS-Pages>` 标签内容
   - **数据格式**：纯 OEOScript v4 代码（无 XML 标签），多个页面直接拼接
   - **AI 回复示例**（包含 XML 标签）：
     ```xml
-    <oeos page>
+    <OEOS-Pages>
     > start
       say "欢迎来到冒险世界！"
       choice:
@@ -138,7 +138,7 @@ World Info 条目通过以下方式激活：
       choice:
         - "继续探索":
           - goto: deep_forest
-    </oeos page>
+    </OEOS-Pages>
     ```
   - **存储格式**（提取后，无 XML 标签）：
     ```
@@ -159,7 +159,7 @@ World Info 条目通过以下方式激活：
 
   **3. OEOS-State** - 玩家状态和路径
   - **用途**：记录玩家的游戏路径和变量状态
-  - **激活状态**：`disable: true`（永不激活）
+  - **激活状态**：`constant: true`（**永久激活**，注入到 AI 上下文）
   - **数据来源**：OEOS 引擎每次页面跳转时上报
   - **上报机制**：每到一个页面，OEOS 引擎发送当前页面 ID 和当前**所有变量**
   - **数据格式**：`pageId(变量1:值1,变量2:值2) > pageId(变量1:值1) > ...`
@@ -172,7 +172,7 @@ World Info 条目通过以下方式激活：
 
   **4. OEOS-Graph** - 页面关系图
   - **用途**：记录页面之间的跳转关系（有向图）
-  - **激活状态**：`disable: true`（永不激活）
+  - **激活状态**：`constant: true`（**永久激活**，注入到 AI 上下文）
   - **数据来源**：从页面中自动提取 `goto` 命令
   - **数据格式**：`父页面 > 子页面1, 子页面2;`
   - **示例**：
@@ -304,7 +304,7 @@ const allChars = characters;
 
 **为什么需要正则表达式**：
 - SillyTavern 会自动将聊天记录发送给 AI
-- 如果不过滤，会导致发送大量垃圾内容（如 `<thinking>` 标签、完整的 `<oeos page>` 内容）污染 AI 上下文
+- 如果不过滤，会导致发送大量垃圾内容（如 `<thinking>` 标签、完整的 `<OEOS-Pages>` 内容）污染 AI 上下文
 - 正则表达式可以将 AI 回复中的所有内容替换为 `<OEOS-Abstracts>` 标签内的摘要内容
 - **重要**：通过设置 `promptOnly: true` 和 `markdownOnly: true`，正则表达式**不会修改**存储在 JSONL 文件中的原始数据，只影响显示和发送给 AI 的聊天记录
 
@@ -330,13 +330,13 @@ const allChars = characters;
   玩家选择了进入森林，我需要生成森林页面...
   </thinking>
 
-  <oeos page>
+  <OEOS-Pages>
   > forest
     say "你进入了茂密的森林..."
     choice:
       - "继续探索":
         - goto: deep_forest
-  </oeos page>
+  </OEOS-Pages>
 
   <OEOS-Abstracts>
   forest: Player enters a dense forest;
@@ -412,7 +412,7 @@ const recentChat = chat.slice(-20);
 
 ### 6. 正则表达式系统
 
-**用途**: 对文本进行预处理和后处理，可以用于提取 AI 生成的特定格式内容（如 `<oeos page>` 标签）。
+**用途**: 对文本进行预处理和后处理，可以用于提取 AI 生成的特定格式内容（如 `<OEOS-Pages>` 标签）。
 
 **应用位置**:
 - `USER_INPUT` - 用户输入
@@ -562,7 +562,7 @@ plugin-bridge.js 更新 World Info（WI-OEOS-State）
     ↓
 SillyTavern Prompt Manager 构建 AI 上下文（包含 World Info）
     ↓
-AI 生成新内容（包含 <oeos page> 标签）
+AI 生成新内容（包含 <OEOS-Pages> 标签）
     ↓
 Regex 系统提取页面数据
     ↓
@@ -593,7 +593,7 @@ OEOS 播放器渲染页面
 
 **4. AI 集成**
 - Prompt Manager 构建包含 World Info 的上下文
-- Regex 提取 AI 生成的 `<oeos page>` 标签
+- Regex 提取 AI 生成的 `<OEOS-Pages>` 标签
 - 自动保存到 `WI-OEOS-Pages`
 
 ### 关键设计决策
@@ -702,8 +702,8 @@ OEOS 播放器渲染页面
 4. 在该文件中创建以下条目：
    - OEOS Character Marker（标记条目，disable: true）
    - OEOS-Pages（页面数据库，disable: true）
-   - OEOS-State（游戏状态，disable: true）
-   - OEOS-Graph（页面关系图，disable: true）
+   - OEOS-State（游戏状态，constant: true）
+   - OEOS-Graph（页面关系图，constant: true）
    - OEOS-Abstracts（页面摘要，constant: true）
    - OEOS-DynamicContext（动态上下文，constant: true）
    ↓
@@ -723,8 +723,8 @@ OEOS 播放器渲染页面
    - 激活角色的 World Info
    - 激活角色的正则表达式
    ↓
-3. 遍历该角色的**所有聊天记录**，提取所有 <oeos page> 和 <OEOS-Abstracts> 标签
-   - 提取 <oeos page>...</oeos page> 标签内容（注意：标签无 id 属性）
+3. 遍历该角色的**所有聊天记录**，提取所有 <OEOS-Pages> 和 <OEOS-Abstracts> 标签
+   - 提取 <OEOS-Pages>...</OEOS-Pages> 标签内容（注意：标签无 id 属性）
    - 提取 <OEOS-Abstracts>...</OEOS-Abstracts> 标签内容
    - 更新 OEOS-Pages 条目（存储纯 OEOScript v4 代码，无 XML 标签）
    - 更新 OEOS-Abstracts 条目（存储摘要，无 XML 标签）
@@ -792,7 +792,7 @@ OEOS 播放器渲染页面
 │    玩家选择了进入森林，我需要生成森林页面...             │
 │    </thinking>                                           │
 │                                                          │
-│    <oeos page>                                           │
+│    <OEOS-Pages>                                           │
 │    > forest                                              │
 │      say "你进入了森林..."                               │
 │      choice:                                             │
@@ -800,7 +800,7 @@ OEOS 播放器渲染页面
 │          - goto: deep_forest                             │
 │        - "返回":                                         │
 │          - goto: start                                   │
-│    </oeos page>                                          │
+│    </OEOS-Pages>                                          │
 │                                                          │
 │    <OEOS-Abstracts>                                      │
 │    forest: Player enters forest;                         │
@@ -815,7 +815,7 @@ OEOS 播放器渲染页面
 │       - 原始数据（JSONL）保持不变                        │
 │                                                          │
 │    b) 监听 AI 回复事件（setupAIResponseListener）       │
-│       - 提取 <oeos page>...</oeos page> 内容             │
+│       - 提取 <OEOS-Pages>...</OEOS-Pages> 内容             │
 │         → 更新 OEOS-Pages（存储纯代码，无 XML 标签）    │
 │       - 提取 <OEOS-Abstracts>...</OEOS-Abstracts> 内容   │
 │         → 更新 OEOS-Abstracts（存储摘要，无 XML 标签）  │
@@ -869,7 +869,7 @@ OEOS 播放器渲染页面
   - 显示内容：只显示摘要（如 "forest: Player enters forest;"）
   - 发送给 AI 的聊天记录：只包含摘要，大幅减少 Token 消耗
   - 原始数据（JSONL）：保持不变，仍包含完整的 AI 回复
-- **重要性**：防止发送大量垃圾内容（如 `<thinking>` 标签、完整的 `<oeos page>` 内容）污染 AI 上下文
+- **重要性**：防止发送大量垃圾内容（如 `<thinking>` 标签、完整的 `<OEOS-Pages>` 内容）污染 AI 上下文
 
 **3. 动态上下文计算**
 - **计算时机**：
@@ -905,7 +905,7 @@ OEOS 播放器渲染页面
 
 ### v3.1 (2025-10-12)
 - **重大更新**：修正 World Info 条目的数据格式说明
-  - 修正 `<oeos page>` 标签格式（无 `id` 属性）
+  - 修正 `<OEOS-Pages>` 标签格式（无 `id` 属性）
   - 明确 OEOS-Pages 和 OEOS-Abstracts 的提取时机（遍历所有聊天记录）
   - 完善 OEOS-State 的上报机制说明（每个页面的所有变量）
   - 大幅扩展 OEOS-DynamicContext 的计算逻辑说明（向前 5 个，向后 1 个）
