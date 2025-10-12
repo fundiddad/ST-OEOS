@@ -76,7 +76,7 @@ export default {
 
       this.$emit('log', {
         type: 'success',
-        message: `✅ Page ${pageId} pre-cached and compiled successfully via WebSocket.`,
+        message: `Page ${pageId} pre-cached and compiled successfully via WebSocket.`,
       })
     },
     getPageNames: function(pattern, onlyEnabled) {
@@ -294,7 +294,7 @@ export default {
         lastGetPageId = pattern
         this.$emit('log', {
           type: 'info',
-          message: `✅ Page ${pattern} found in local cache. Rendering directly.`,
+          message: `Page ${pattern} found in local cache. Rendering directly.`,
         })
         // 统一返回数据结构
         return Promise.resolve({
@@ -346,7 +346,7 @@ export default {
 
           this.$emit('log', {
             type: 'success',
-            message: `✅ Page ${responseData.pageId} loaded and compiled. Media info cached.`,
+            message: `Page ${responseData.pageId} loaded and compiled. Media info cached.`,
           })
           lastGetPageId = responseData.pageId
           // 不再直接返回 pageContent，而是返回一个包含请求和响应信息的对象

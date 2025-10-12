@@ -172,7 +172,7 @@ export default {
       document.addEventListener('webkitfullscreenchange', exitHandler, false)
     }
 
-    // ✅ 不自动启动游戏，等待用户选择角色
+    // 不自动启动游戏，等待用户选择角色
     // this.startAiDrivenTease();
   },
   methods: {
@@ -183,7 +183,7 @@ export default {
       this.showCharacterSelector = false;
 
       try {
-        // ✅ 使用全局 API（解耦方案）
+        // 使用全局 API（解耦方案）
         if (window.oeosApi && window.oeosApi.bindCharacter) {
           await window.oeosApi.bindCharacter(index);
         }
@@ -207,7 +207,7 @@ export default {
     // New method to start the game via the ST plugin
     async startAiDrivenTease() {
       this.loading = true;
-      // ✅ 使用全局 API（解耦方案）
+      // 使用全局 API（解耦方案）
       try {
         if (!window.oeosApi || !window.oeosApi.getPage || !window.oeosApi.initGameData) {
           throw new Error('OEOS API not available. Please ensure the plugin is loaded.');
@@ -235,7 +235,7 @@ export default {
 
     // New method to report state changes back to the ST plugin
     reportStateToPlugin() {
-        // ✅ 直接使用导入的函数
+        // 直接使用导入的函数
         let variables = {};
         try {
             // teaseStorage is a JSON string, so we need to parse it

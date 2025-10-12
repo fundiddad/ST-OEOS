@@ -1,7 +1,7 @@
 // Abstraction layer for all direct interactions with SillyTavern's core APIs (World Info, EventSource, etc.).
 
 import { eventSource } from '../../../../script.js';
-import { saveWorldInfo, loadWorldInfo } from '../../../world-info.js';
+import { saveWorldInfo, loadWorldInfo, updateWorldInfoList } from '../../../world-info.js';
 
 /**
  * Saves content to a World Info entry.
@@ -17,6 +17,8 @@ export async function saveWi(name, content) {
             content = '';
         }
         await saveWorldInfo(name, content, true);
+        // 刷新 World Info 列表，使新创建的文件立即显示在UI中
+        await updateWorldInfoList();
     } catch (error) {
         console.error(`[OEOS] Failed to save World Info entry "${name}":`, error);
         throw error;

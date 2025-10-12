@@ -53,39 +53,41 @@
 
 ### 待实现的功能
 
-#### 阶段 1：核心数据流（优先级：🔴 最高）
+#### 阶段 1：核心数据流（优先级：🔴 最高）✅ **已完成 (2025-10-12)**
 
 **1.1 修正 World Info 条目实现**
-- [ ] 修正 OEOS-Pages 的数据格式（移除错误的 `<oeos page id="xxx">` 包装）
-- [ ] 修正 OEOS-Abstracts 的提取和存储逻辑
-- [ ] 修正 OEOS-DynamicContext 的计算逻辑
-- [ ] 修正 OEOS-State 的变量记录格式
-- [ ] 修正 OEOS-Graph 的自动提取逻辑
+- [x] 修正 OEOS-Pages 的数据格式（移除错误的 `<oeos page id="xxx">` 包装）
+- [x] 修正 OEOS-Abstracts 的提取和存储逻辑
+- [x] 修正 OEOS-DynamicContext 的计算逻辑
+- [x] 修正 OEOS-State 的变量记录格式
+- [x] 修正 OEOS-Graph 的自动提取逻辑
 
 **1.2 聊天记录提取系统**
-- [ ] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<oeos page>` 标签
-- [ ] 实现 `extractAbstractsFromChat()` - 从 chat 数组提取 `<OEOS-Abstracts>` 标签
-- [ ] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
-- [ ] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
+- [x] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<oeos page>` 标签
+- [x] 实现 `extractAbstractsFromChat()` - 从 chat 数组提取 `<OEOS-Abstracts>` 标签
+- [x] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
+- [x] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
 
 **1.3 正则表达式配置**
-- [ ] 实现 `addOEOSRegexToCharacter()` - 为角色添加 OEOS 正则表达式规则
-- [ ] 配置提取 `<OEOS-Abstracts>` 并替换消息显示的正则
+- [x] 实现 `addOEOSRegexToCharacter()` - 为角色添加 OEOS 正则表达式规则
+- [x] 配置提取 `<OEOS-Abstracts>` 并替换消息显示的正则
 - [ ] 测试正则表达式在 AI 输出中的效果
 
-#### 阶段 2：OEOS 引擎修改（优先级：🟠 高）
+#### 阶段 2：OEOS 引擎修改（优先级：🟠 高）✅ **已完成 (2025-10-12)**
 
 **2.1 变量追踪系统**
-- [ ] 在 Storage mixin 中添加 `getAllVariables()` 方法
-- [ ] 在 OpenEosPlayer.vue 中监听页面变化
-- [ ] 实现 `onPageChange()` 回调，上报页面 ID 和所有变量
-- [ ] 调用 `window.oeosApi.updateState()` 更新 OEOS-State
+- [x] 在 Storage mixin 中添加 `getAllVariables()` 方法
+- [x] 在 OpenEosPlayer.vue 中监听页面变化
+- [x] 实现 `onPageChange()` 回调，上报页面 ID 和所有变量
+- [x] 调用 `window.oeosApi.updateState()` 更新 OEOS-State
 
 **2.2 页面加载逻辑**
-- [ ] 修改 `getPage()` 支持从 OEOS-Pages 读取部分脚本
-- [ ] 修改 OEOSV4Parser 支持解析不完整的脚本
-- [ ] 实现页面缺失时的处理逻辑（显示"正在生成..."）
-- [ ] 实现 AI 生成完成后的自动刷新
+- [x] 修改 `getPage()` 支持从 OEOS-Pages 读取部分脚本
+- [x] 修改 OEOSV4Parser 支持解析不完整的脚本
+- [x] 实现页面缺失时的处理逻辑（显示"正在生成..."）
+- [x] 实现 AI 生成完成后的自动刷新
+
+**详细完成报告**: 参见 `STAGE1_2_COMPLETION.md`
 
 #### 阶段 3：AI 生成流程（优先级：🟡 中）
 
@@ -124,49 +126,59 @@
 
 ### 已知问题与修正计划
 
-#### 1. **World Info 条目实现错误** 🔴
+#### 1. **World Info 条目实现错误** ✅ **已修正 (2025-10-12)**
 
 **问题描述**：
-- `OEOS-Pages` 错误地添加了 `<oeos page id="xxx">` 包装
+- `OEOS-Pages` 错误地添加了 `<oeos page id="xxx">` 包装（正确格式：`<oeos page>` 无 `id` 属性）
+- 存储格式错误：应该存储纯 OEOScript v4 代码，不应包含任何 XML 标签
 - `OEOS-Abstracts` 的提取逻辑未实现
-- `OEOS-DynamicContext` 的计算逻辑不正确
-- `OEOS-State` 缺少变量记录功能
+- `OEOS-DynamicContext` 的计算逻辑不正确（应该向前 5 个页面，向后 1 个页面）
+- `OEOS-State` 缺少变量记录功能（应该记录每个页面的所有变量）
 
-**修正计划**：
-- 修改 `game-state.js` 中的数据格式
-- 实现聊天记录提取系统
-- 重新实现 `recalculateDynamicContext()`
+**修正方案**：
+- ✅ 修改 `game-state.js` 中的 `updatePageEntry` 函数
+  - 移除 `<oeos page id="xxx">` 包装
+  - 存储纯 OEOScript v4 代码，用 `> pageId` 分隔
+- ✅ 修改 `plugin-bridge.js` 中的 `getPage` 函数
+  - 使用正确的正则表达式提取页面（匹配 `> pageId` 而不是 `<oeos page id="xxx">`）
+- ✅ 修改 `plugin-bridge.js` 中的 `initializeGameDataFromChat` 函数
+  - 正确处理从聊天记录提取的页面内容
+- ✅ 修改 `context-engine.js` 中的 `extractPageSource` 函数
+  - 使用正确的正则表达式提取页面
+- ✅ 实现聊天记录提取系统
+- ✅ 重新实现 `recalculateDynamicContext()`
 
-#### 2. **OEOS 引擎缺少状态上报** 🟠
+#### 2. **OEOS 引擎缺少状态上报** ✅ **已修正 (2025-10-12)**
 
 **问题描述**：
 - OEOS 播放器没有在页面跳转时上报状态
 - Storage 对象没有 `getAllVariables()` 方法
 
-**修正计划**：
-- 在 `Storage.js` 中添加 `getAllVariables()` 方法
-- 在 `OpenEosPlayer.vue` 中监听页面变化
-- 调用 `window.oeosApi.updateState()` 上报状态
+**修正方案**：
+- ✅ 在 `Storage.js` 中添加 `getAllVariables()` 方法
+- ✅ 在 `OpenEosPlayer.vue` 中监听页面变化
+- ✅ 调用 `window.oeosApi.updateState()` 上报状态
 
-#### 3. **正则表达式规则未配置** 🟡
+#### 3. **正则表达式规则未配置** ✅ **已修正 (2025-10-12)**
 
 **问题描述**：
 - 角色没有配置 OEOS 正则表达式规则
 - AI 回复的 `<oeos page>` 和 `<OEOS-Abstracts>` 标签会污染聊天记录显示
 
-**修正计划**：
-- 在 `enableOEOSForCharacter()` 中添加正则表达式配置
-- 配置提取 `<OEOS-Abstracts>` 并替换消息显示
+**修正方案**：
+- ✅ 在 `enableOEOSForCharacter()` 中添加正则表达式配置
+- ✅ 配置提取 `<OEOS-Abstracts>` 并替换消息显示
+- ⏳ 测试正则表达式在 AI 输出中的效果
 
-#### 4. **页面加载逻辑不支持部分脚本** 🟡
+#### 4. **页面加载逻辑不支持部分脚本** ✅ **已修正 (2025-10-12)**
 
 **问题描述**：
 - OEOSV4Parser 期望完整的故事脚本
 - 现在 AI 逐步生成页面，脚本不完整
 
-**修正计划**：
-- 修改 `getPage()` 使用简单的字符串分割
-- 或修改 OEOSV4Parser 支持 `allowIncomplete` 选项
+**修正方案**：
+- ✅ 修改 `getPage()` 使用简单的字符串分割
+- ✅ 实现页面缺失时的占位符页面
 
 #### 5. **未经测试** 🟢
 
@@ -177,6 +189,18 @@
 **测试计划**：
 - 先测试基础功能（角色选择、World Info 读写）
 - 再测试复杂功能（AI 生成、动态上下文）
+
+#### 6. **新增问题** 🟡
+
+**问题描述**：
+- AI 回复监听器可能重复注册
+- 正则表达式未经实际测试
+- 占位符页面逻辑较简单
+
+**待处理**：
+- 添加监听器去重逻辑
+- 在实际环境中测试正则表达式
+- 完善占位符页面的处理逻辑
 
 ---
 
@@ -357,6 +381,14 @@ function loadData() {
 ---
 
 ## 变更记录
+
+### v3.1 (2025-10-12)
+- **重大修正**：修复 World Info 条目的数据格式错误
+  - 修正 `<oeos page>` 标签格式说明（无 `id` 属性）
+  - 修正存储格式（纯 OEOScript v4 代码，无 XML 标签）
+  - 更新所有相关函数的实现（`updatePageEntry`, `getPage`, `extractPageSource` 等）
+  - 修复 `require is not defined` 错误（改用 ES6 import）
+  - 移除不必要的 API 可用性检查
 
 ### v3.0 (2025-10-11)
 - 彻底重构文档，聚焦项目进度

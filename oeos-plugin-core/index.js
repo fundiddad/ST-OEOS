@@ -43,7 +43,7 @@ function handleAiResponse(data) {
 
 // Self-executing function to initialize the plugin
 (function () {
-    toastr.success('[OEOS] Main plugin module loaded.');
+    // toastr.success('[OEOS] Main plugin module loaded.');
     // Start listening for AI responses.
     listenToAiResponse(handleAiResponse);
     // Setup the UI components.

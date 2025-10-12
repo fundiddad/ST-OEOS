@@ -4,5 +4,5 @@
 // index.js will handle all further initialization, including UI setup.
 import './index.js';
 
-toastr.info('[OEOS] Loader finished.');
+// toastr.info('[OEOS] Loader finished.');
 

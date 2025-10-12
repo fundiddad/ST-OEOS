@@ -54,7 +54,7 @@
 </template>
 
 <script>
-// ✅ 使用全局 API（解耦方案），不直接 import SillyTavern 文件
+// 使用全局 API（解耦方案），不直接 import SillyTavern 文件
 
 export default {
   name: 'CharacterSelector',
@@ -75,7 +75,7 @@ export default {
         this.loading = true;
         this.error = null;
 
-        // ✅ 使用全局 API（解耦方案）
+        // 使用全局 API（解耦方案）
         if (!window.oeosApi || !window.oeosApi.getCharacters) {
           throw new Error('OEOS API not available');
         }

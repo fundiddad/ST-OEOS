@@ -47,6 +47,13 @@ export default {
       STORAGE = {}
       this.saveStorage()
     },
+    /**
+     * 获取所有变量（用于 OEOS 状态上报）
+     * @returns {Object} 所有存储的变量
+     */
+    getAllVariables() {
+      return { ...STORAGE }
+    },
     getStorageKey() {
       return 'oeosTeaseStorage-' + this.teaseId
     },
