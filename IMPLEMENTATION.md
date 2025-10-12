@@ -53,31 +53,130 @@
 
 ### 待实现的功能
 
-#### 核心功能
-- ⏳ AI 生成页面的正则表达式规则配置
-- ⏳ 动态上下文引擎完善
-- ⏳ 角色 World Info 激活机制
-- ⏳ 角色正则表达式激活机制
-- ⏳ 页面编译和执行流程测试
+#### 阶段 1：核心数据流（优先级：🔴 最高）
 
-#### 高级功能
+**1.1 修正 World Info 条目实现**
+- [ ] 修正 OEOS-Pages 的数据格式（移除错误的 `<oeos page id="xxx">` 包装）
+- [ ] 修正 OEOS-Abstracts 的提取和存储逻辑
+- [ ] 修正 OEOS-DynamicContext 的计算逻辑
+- [ ] 修正 OEOS-State 的变量记录格式
+- [ ] 修正 OEOS-Graph 的自动提取逻辑
+
+**1.2 聊天记录提取系统**
+- [ ] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<oeos page>` 标签
+- [ ] 实现 `extractAbstractsFromChat()` - 从 chat 数组提取 `<OEOS-Abstracts>` 标签
+- [ ] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
+- [ ] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
+
+**1.3 正则表达式配置**
+- [ ] 实现 `addOEOSRegexToCharacter()` - 为角色添加 OEOS 正则表达式规则
+- [ ] 配置提取 `<OEOS-Abstracts>` 并替换消息显示的正则
+- [ ] 测试正则表达式在 AI 输出中的效果
+
+#### 阶段 2：OEOS 引擎修改（优先级：🟠 高）
+
+**2.1 变量追踪系统**
+- [ ] 在 Storage mixin 中添加 `getAllVariables()` 方法
+- [ ] 在 OpenEosPlayer.vue 中监听页面变化
+- [ ] 实现 `onPageChange()` 回调，上报页面 ID 和所有变量
+- [ ] 调用 `window.oeosApi.updateState()` 更新 OEOS-State
+
+**2.2 页面加载逻辑**
+- [ ] 修改 `getPage()` 支持从 OEOS-Pages 读取部分脚本
+- [ ] 修改 OEOSV4Parser 支持解析不完整的脚本
+- [ ] 实现页面缺失时的处理逻辑（显示"正在生成..."）
+- [ ] 实现 AI 生成完成后的自动刷新
+
+#### 阶段 3：AI 生成流程（优先级：🟡 中）
+
+**3.1 页面请求系统**
+- [ ] 实现 `requestPageFromAI()` - 模拟用户输入触发 AI 生成
+- [ ] 监听 AI 回复事件（`AI_MESSAGE_RECEIVED`）
+- [ ] 自动提取并更新 OEOS-Pages 和 OEOS-Abstracts
+- [ ] 自动重新计算 OEOS-DynamicContext
+
+**3.2 动态上下文引擎**
+- [ ] 完善 `recalculateDynamicContext()` 的计算逻辑
+- [ ] 实现向前 5 个页面的相关 ID 提取
+- [ ] 实现向后 1 个页面的子页面提取
+- [ ] 从 OEOS-Pages 提取相关页面内容
+- [ ] 更新 OEOS-DynamicContext 条目
+
+#### 阶段 4：测试与优化（优先级：🟢 低）
+
+**4.1 功能测试**
+- [ ] 测试角色启用 OEOS 流程
+- [ ] 测试进入游戏并加载初始页面
+- [ ] 测试玩家选择触发 AI 生成
+- [ ] 测试 AI 生成后的页面加载
+- [ ] 测试状态保存和恢复
+
+**4.2 性能优化**
+- [ ] 优化聊天记录遍历性能
+- [ ] 优化 DynamicContext 计算性能
+- [ ] 添加缓存机制
+
+#### 高级功能（未来计划）
 - 📋 多角色协作模式
 - 📋 角色成长系统
 - 📋 可视化编辑器
 - 📋 页面图谱可视化
 
-### 已知问题
+### 已知问题与修正计划
 
-1. **World Info 架构调整**
-   - 之前错误地创建了全局 WI 文件存储角色数据
-   - 已修正为使用角色专属 World Info
+#### 1. **World Info 条目实现错误** 🔴
 
-2. **未经测试**
-   - 所有代码模块均未进行完整的功能测试
-   - 需要建立测试流程
+**问题描述**：
+- `OEOS-Pages` 错误地添加了 `<oeos page id="xxx">` 包装
+- `OEOS-Abstracts` 的提取逻辑未实现
+- `OEOS-DynamicContext` 的计算逻辑不正确
+- `OEOS-State` 缺少变量记录功能
 
-3. **正则表达式规则未配置**
-   - 需要在 SillyTavern 中配置提取 `<oeos page>` 标签的正则表达式
+**修正计划**：
+- 修改 `game-state.js` 中的数据格式
+- 实现聊天记录提取系统
+- 重新实现 `recalculateDynamicContext()`
+
+#### 2. **OEOS 引擎缺少状态上报** 🟠
+
+**问题描述**：
+- OEOS 播放器没有在页面跳转时上报状态
+- Storage 对象没有 `getAllVariables()` 方法
+
+**修正计划**：
+- 在 `Storage.js` 中添加 `getAllVariables()` 方法
+- 在 `OpenEosPlayer.vue` 中监听页面变化
+- 调用 `window.oeosApi.updateState()` 上报状态
+
+#### 3. **正则表达式规则未配置** 🟡
+
+**问题描述**：
+- 角色没有配置 OEOS 正则表达式规则
+- AI 回复的 `<oeos page>` 和 `<OEOS-Abstracts>` 标签会污染聊天记录显示
+
+**修正计划**：
+- 在 `enableOEOSForCharacter()` 中添加正则表达式配置
+- 配置提取 `<OEOS-Abstracts>` 并替换消息显示
+
+#### 4. **页面加载逻辑不支持部分脚本** 🟡
+
+**问题描述**：
+- OEOSV4Parser 期望完整的故事脚本
+- 现在 AI 逐步生成页面，脚本不完整
+
+**修正计划**：
+- 修改 `getPage()` 使用简单的字符串分割
+- 或修改 OEOSV4Parser 支持 `allowIncomplete` 选项
+
+#### 5. **未经测试** 🟢
+
+**问题描述**：
+- 所有代码模块均未进行完整的功能测试
+- 需要建立测试流程
+
+**测试计划**：
+- 先测试基础功能（角色选择、World Info 读写）
+- 再测试复杂功能（AI 生成、动态上下文）
 
 ---
 
@@ -156,15 +255,22 @@ SillyTavern-release/
 
 ### World Info 文件
 
+**核心原则**：每个角色就是一个独立的游戏，所有游戏数据都存储在角色专属的 World Info 中。
+
 ```
 SillyTavern-release/data/{user}/worlds/
-├── WI-OEOS-Pages.json            # 全局：页面数据库
-├── WI-OEOS-State.json            # 全局：游戏状态
-├── WI-OEOS-Graph.json            # 全局：页面关系图
-├── WI-OEOS-Abstracts.json        # 全局：页面摘要
-├── WI-OEOS-DynamicContext.json   # 全局：动态上下文
-└── {角色名}-OEOS.json            # 角色专属：角色数据
+└── {角色名}-OEOS.json            # 角色专属：该角色游戏的所有数据
+    ├── OEOS Character Marker     # 标记条目（仅用于识别，不激活）
+    ├── OEOS-Pages                # 页面数据库
+    ├── OEOS-State                # 游戏状态
+    ├── OEOS-Graph                # 页面关系图
+    ├── OEOS-Abstracts            # 页面摘要
+    └── OEOS-DynamicContext       # 动态上下文
 ```
+
+**示例**：
+- `test1-OEOS.json` - test1 角色的游戏数据
+- `Seraphina-OEOS.json` - Seraphina 角色的游戏数据
 
 ---
 
@@ -218,9 +324,9 @@ function loadData() {
 ### 架构原则
 
 #### 1. 数据存储
-- ✅ 全局数据 → 全局 World Info（`WI-OEOS-*`）
-- ✅ 角色数据 → 角色专属 World Info（`{角色名}-OEOS.json`）
-- ❌ 不要创建全局 WI 存储角色数据
+- ✅ 每个角色一个游戏 → 所有游戏数据存储在角色专属 World Info（`{角色名}-OEOS.json`）
+- ❌ 不要创建全局 WI 存储游戏数据（如 `WI-OEOS-Pages`、`WI-OEOS-State`）
+- ❌ 不要创建全局 WI 存储角色数据（如 `WI-OEOS-CharacterContext`）
 
 #### 2. 通知系统
 - ✅ 使用 `toastr` 提供用户反馈

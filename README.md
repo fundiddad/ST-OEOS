@@ -79,22 +79,25 @@ src/
 ### 启动游戏
 
 1. 在 SillyTavern 中点击火箭图标
-2. 选择一个角色开始冒险
-3. 系统自动绑定角色数据（描述、性格、World Info、聊天历史）
-4. 开始 AI 驱动的互动故事
+2. 选择一个角色
+3. 如果角色不是 OEOS 角色，点击"启用 OEOS"
+4. 系统自动创建角色专属的 World Info 和游戏数据
+5. 开始 AI 驱动的互动故事
 
 ### 游戏流程
 
 ```
-点击火箭图标 → 选择角色 → 绑定角色数据 → AI 生成起始页面 →
-玩家互动 → AI 生成新内容 → 无限循环
+点击火箭图标 → 选择角色 → 启用 OEOS（如需要） → 进入游戏 →
+从 start 页面开始（或从上次位置恢复） → 玩家选择 →
+AI 生成新页面 → 继续游戏 → 无限循环
 ```
 
 ### 数据持久化
 
-- 游戏状态存储在 SillyTavern 的 World Info 中
-- 每个角色有独立的游戏进度
-- 支持保存/加载游戏
+- 每个角色就是一个独立的游戏
+- 游戏数据存储在角色专属的 World Info 中（`{角色名}-OEOS.json`）
+- 包含页面数据库、游戏状态、页面关系图、页面摘要等
+- 支持从上次位置恢复游戏
 
 ## 🔧 开发工作流
 
@@ -147,13 +150,47 @@ if (window.oeosApi) {
 }
 ```
 
-### World Info 驱动
+### 角色专属 World Info
 
-所有游戏数据存储在 World Info 中：
-- `WI-OEOS-Pages` - 页面数据库
-- `WI-OEOS-State` - 玩家状态和路径
-- `WI-OEOS-Graph` - 故事图谱
-- `WI-OEOS-DynamicContext` - 动态上下文
+每个 OEOS 角色都有自己的 World Info 文件（`{角色名}-OEOS.json`），包含：
+- **OEOS Character Marker** - 标记条目（用于识别 OEOS 角色）
+- **OEOS-Pages** - 页面数据库（存储所有 OEOScript 页面）
+- **OEOS-State** - 游戏状态（玩家路径和变量）
+- **OEOS-Graph** - 页面关系图（页面之间的跳转关系）
+- **OEOS-Abstracts** - 页面摘要（用于 Token 优化，永久激活）
+- **OEOS-DynamicContext** - 动态上下文（根据玩家位置计算，永久激活）
+
+### AI 生成流程
+
+1. 玩家选择一个选项（例如："进入森林"）
+2. OEOS 引擎执行 `goto: forest`
+3. 检查 OEOS-Pages 是否有 `forest` 页面
+4. 如果没有，显示"正在生成..."并请求 AI 生成
+5. AI 回复包含 `<oeos page>` 和 `<OEOS-Abstracts>` 标签
+6. 系统自动提取并更新 World Info
+7. 正则表达式过滤消息显示（只显示摘要）
+8. OEOS 播放器加载新页面
+
+## ⚠️ 项目状态
+
+> **当前阶段**: 🔍 **探索阶段** - 项目处于架构设计和原型开发阶段，以下功能尚未经过完整测试。
+
+**已完成**：
+- ✅ 角色选择界面
+- ✅ OEOS 角色标记系统
+- ✅ World Info 条目创建
+- ✅ 基础 API 桥接
+
+**进行中**：
+- 🔄 聊天记录提取系统
+- 🔄 正则表达式配置
+- 🔄 OEOS 引擎状态上报
+- 🔄 动态上下文计算
+
+**待实现**：
+- ⏳ AI 生成页面流程
+- ⏳ 页面加载和渲染
+- ⏳ 完整的游戏循环测试
 
 ## ❓ 常见问题
 
@@ -165,6 +202,12 @@ A: 修改代码后运行 `npm run build && node deploy.js` 即可。
 
 **Q: 支持哪些 OEOScript 版本？**
 A: 目前支持 OEOScript v4。详见 `oeos-commands.v4.md`。
+
+**Q: 每个角色的游戏数据存储在哪里？**
+A: 存储在角色专属的 World Info 文件中（`data/{user}/worlds/{角色名}-OEOS.json`）。
+
+**Q: AI 生成的页面如何存储？**
+A: AI 回复中的 `<oeos page>` 标签内容会被提取并存储到 OEOS-Pages 条目中。
 
 ## 🤝 贡献
 

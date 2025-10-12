@@ -104,21 +104,92 @@ World Info 条目通过以下方式激活：
 
 #### World Info 分类
 
-**1. 全局 World Info**（用于所有 OEOS 游戏）:
-- `WI-OEOS-Pages` - 页面数据库（存储所有 OEOScript 页面）
-- `WI-OEOS-State` - 玩家状态和路径（当前页面、变量、历史路径）
-- `WI-OEOS-Graph` - 故事图谱（页面关系、分支结构）
-- `WI-OEOS-Abstracts` - 页面摘要（用于 Token 优化）
-- `WI-OEOS-DynamicContext` - 动态上下文（根据游戏状态计算的上下文）
+**核心原则**：每个角色就是一个独立的游戏，所有游戏数据都存储在角色专属的 World Info 中。
 
-**2. 角色专属 World Info**:
-- 每个 OEOS 角色都有自己的 World Info 文件（如 `Seraphina-OEOS.json`）
+**角色专属 World Info**（`{角色名}-OEOS.json`）:
+- 每个 OEOS 角色都有自己的 World Info 文件（如 `test1-OEOS.json`）
 - 通过 `character.data.extensions.world` 字段绑定到角色
-- 包含 `OEOS-character` 标记条目用于识别 OEOS 角色
-- 可存储角色特定的游戏数据和设定
+- 包含该角色游戏的所有数据：
+
+  **1. OEOS Character Marker** - 标记条目
+  - **用途**：仅用于识别 OEOS 角色
+  - **激活状态**：`disable: true`（永不激活）
+  - **数据格式**：`key: ['OEOS-character']`，无内容
+
+  **2. OEOS-Pages** - 页面数据库
+  - **用途**：存储该角色游戏的所有 OEOScript 页面
+  - **激活状态**：`disable: true`（永不激活）
+  - **数据来源**：从聊天记录中提取 `<oeos page>...</oeos page>` 标签内容
+  - **数据格式**：纯 OEOScript v4 代码（无 XML 标签）
+  - **示例**：
+    ```
+    > start
+      say "欢迎来到冒险世界！"
+      choice:
+        - "进入森林":
+          - goto: forest
+
+    > forest
+      say "你进入了茂密的森林..."
+    ```
+
+  **3. OEOS-State** - 玩家状态和路径
+  - **用途**：记录玩家的游戏路径和变量状态
+  - **激活状态**：`disable: true`（永不激活）
+  - **数据来源**：OEOS 引擎每次页面跳转时上报
+  - **数据格式**：`pageId(变量1:值1,变量2:值2) > pageId(变量1:值1) > ...`
+  - **示例**：`start(initialized:1) > forest(hp:100,gold:50) > cave(hp:80,gold:70)`
+
+  **4. OEOS-Graph** - 页面关系图
+  - **用途**：记录页面之间的跳转关系（有向图）
+  - **激活状态**：`disable: true`（永不激活）
+  - **数据来源**：从页面中自动提取 `goto` 命令
+  - **数据格式**：`父页面 > 子页面1, 子页面2;`
+  - **示例**：
+    ```
+    start > forest, village;
+    forest > deep_forest, river;
+    cave > treasure, exit;
+    ```
+
+  **5. OEOS-Abstracts** - 页面摘要
+  - **用途**：存储每个页面的简短摘要，用于 Token 优化
+  - **激活状态**：`constant: true`（**永久激活**，注入到 AI 上下文）
+  - **数据来源**：从聊天记录中提取 `<OEOS-Abstracts>...</OEOS-Abstracts>` 标签内容
+  - **数据格式**：`pageId: 摘要文本;`
+  - **示例**：
+    ```
+    start: The adventure begins...;
+    forest: Player enters a dense forest;
+    cave: Player discovers a mysterious cave;
+    ```
+
+  **6. OEOS-DynamicContext** - 动态上下文
+  - **用途**：根据玩家当前位置，动态计算需要提供给 AI 的页面内容
+  - **激活状态**：`constant: true`（**永久激活**，注入到 AI 上下文）
+  - **数据来源**：根据 OEOS-State 和 OEOS-Graph 动态计算
+  - **数据格式**：相关页面的完整 OEOScript v4 代码
+  - **计算逻辑**：
+    - 从 State 获取当前位置（最后一个页面）
+    - 向前 5 个页面的所有相关 ID
+    - 向后 1 个页面（当前页面的子页面）
+    - 从 OEOS-Pages 提取这些 ID 的完整内容
+  - **示例**：
+    ```
+    > forest
+      say "你进入了茂密的森林..."
+      choice:
+        - "继续探索":
+          - goto: deep_forest
+
+    > deep_forest
+      say "森林越来越深..."
+    ```
 
 **重要原则**：
-- ❌ **错误做法**：创建全局 WI 文件存储角色特定数据（如 `WI-OEOS-CharacterContext`）
+- ❌ **错误做法**：创建全局 WI 文件存储游戏数据（如 `WI-OEOS-Pages`、`WI-OEOS-State`）
+- ✅ **正确做法**：所有游戏数据都存储在角色专属的 World Info 中
+- ❌ **错误做法**：创建全局 WI 文件存储角色数据（如 `WI-OEOS-CharacterContext`）
 - ✅ **正确做法**：在角色专属的 World Info 中添加条目
 
 ---
@@ -158,7 +229,34 @@ const allChars = characters;
 
 ---
 
-### 4. 事件系统（EventSource）
+### 4. 正则表达式系统
+
+**用途**: 在 AI 回复后自动处理消息内容，提取或替换特定格式。
+
+**OEOS 使用的正则表达式**:
+```javascript
+{
+  scriptName: 'OEOS-Filter',
+  findRegex: '([\\s\\S]*)<OEOS-Abstracts>([\\s\\S]*?)<\\/OEOS-Abstracts>([\\s\\S]*)',
+  replaceString: '$2',  // 只保留 Abstracts 内容
+  trimStrings: true,
+  placement: ['AI_OUTPUT'],  // 只作用于 AI 输出
+  disabled: false
+}
+```
+
+**效果**:
+- AI 回复：`<thinking>...</thinking>\n<oeos page>...</oeos page>\n<OEOS-Abstracts>forest: Player enters forest;</OEOS-Abstracts>`
+- 显示内容：`forest: Player enters forest;`
+- 原始数据（JSONL）：保持不变，仍包含完整的 AI 回复
+
+**配置方式**:
+- 存储在 `extension_settings.regex` 数组中
+- 通过 `character_allowed_regex` 指定哪些角色可以使用
+
+---
+
+### 5. 事件系统（EventSource）
 
 **用途**: SillyTavern 的事件总线，用于监听和触发应用事件。
 
@@ -379,8 +477,7 @@ OEOS 播放器渲染页面
 
 **1. 数据层**
 - 使用 World Info 存储所有游戏数据
-- 全局 WI：页面库、状态、图谱、摘要、动态上下文
-- 角色专属 WI：角色特定数据和设定
+- 角色专属 WI：每个角色一个游戏，包含该角色的所有游戏数据（页面库、状态、图谱、摘要、动态上下文、角色上下文、聊天历史等）
 
 **2. 插件层**（ES6 模块）
 - `plugin-bridge.js` - 核心桥接模块，暴露 `window.oeosApi`
@@ -474,6 +571,175 @@ OEOS 播放器渲染页面
 ### 8. 所有代码必须有中文注释
 - 函数、类、复杂逻辑都要有注释
 - 说明功能、参数、返回值
+
+---
+
+## 完整游戏流程
+
+### 阶段 1：初始化与角色选择
+
+```
+1. 用户打开 OEOS 播放器
+   ↓
+2. Vue 应用显示角色选择界面 (CharacterSelector.vue)
+   ↓
+3. 调用 window.oeosApi.getCharacters() 获取角色列表
+   ↓
+4. 检测每个角色是否为 OEOS 角色（检查 World Info 中的 OEOS-character 标记）
+   ↓
+5. 显示角色列表，OEOS 角色带有绿色标识
+```
+
+### 阶段 2：启用 OEOS 支持（如果角色不是 OEOS 角色）
+
+```
+1. 用户点击"启用 OEOS"
+   ↓
+2. 调用 window.oeosApi.enableOEOSForCharacter(charIndex)
+   ↓
+3. 创建角色专属的 World Info 文件：{角色名}-OEOS.json
+   ↓
+4. 在该文件中创建以下条目：
+   - OEOS Character Marker（标记条目，disable: true）
+   - OEOS-Pages（页面数据库，disable: true）
+   - OEOS-State（游戏状态，disable: true）
+   - OEOS-Graph（页面关系图，disable: true）
+   - OEOS-Abstracts（页面摘要，constant: true）
+   - OEOS-DynamicContext（动态上下文，constant: true）
+   ↓
+5. 将 World Info 绑定到角色（character.data.extensions.world）
+   ↓
+6. 添加 OEOS 正则表达式规则到角色
+   ↓
+7. 刷新 UI，角色现在显示为 OEOS 角色
+```
+
+### 阶段 3：进入游戏
+
+```
+1. 用户选择 OEOS 角色
+   ↓
+2. 调用 window.oeosApi.bindCharacter(charIndex)
+   - 激活角色的 World Info
+   - 激活角色的正则表达式
+   ↓
+3. 遍历聊天记录，提取所有 <oeos page> 和 <OEOS-Abstracts> 标签
+   - 更新 OEOS-Pages 条目
+   - 更新 OEOS-Abstracts 条目
+   - 更新 OEOS-Graph 条目（自动提取 goto）
+   ↓
+4. 检查 OEOS-State
+   - 如果有：从最后位置恢复（例如：forest）
+   - 如果没有：从 start 页面开始
+   ↓
+5. 调用 window.oeosApi.getPage(pageId)
+   - 从 OEOS-Pages 获取页面内容
+   - 如果不存在，返回 null
+   ↓
+6. OEOS 播放器渲染页面
+   - 使用 OEOSV4Parser 解析页面
+   - 编译并执行
+```
+
+### 阶段 4：游戏进行中（核心循环）
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 1. 玩家在 OEOS 播放器中进行操作                          │
+│    - 点击选项 (choice)                                   │
+│    - 输入文本 (prompt)                                   │
+│    - 触发事件                                            │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 2. OEOS 引擎执行 goto 命令（例如：goto: forest）        │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 3. 查询 OEOS-Pages                                       │
+│    - 如果 forest 页面存在 → 跳到步骤 8                  │
+│    - 如果不存在 → 继续步骤 4                            │
+└─────────────────────────────────────────────────────────┘
+                        ↓ (页面不存在)
+┌─────────────────────────────────────────────────────────┐
+│ 4. 显示"正在生成..."                                     │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 5. 请求 AI 生成页面                                      │
+│    - 调用 window.oeosApi.requestPageFromAI('forest')    │
+│    - 模拟用户输入："玩家选择：forest"                    │
+│    - ST 组装上下文：                                     │
+│      * 系统提示词                                        │
+│      * 角色卡                                            │
+│      * 聊天记录（经过正则过滤）                          │
+│      * World Info（OEOS-Abstracts + OEOS-DynamicContext）│
+│    - 发送给 AI                                           │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 6. AI 回复                                               │
+│    <thinking>...</thinking>                              │
+│    <oeos page>                                           │
+│    > forest                                              │
+│      say "你进入了森林..."                               │
+│      choice:                                             │
+│        - "继续探索":                                     │
+│          - goto: deep_forest                             │
+│    </oeos page>                                          │
+│    <OEOS-Abstracts>                                      │
+│    forest: Player enters forest;                         │
+│    </OEOS-Abstracts>                                     │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 7. 监听 AI 回复事件（MESSAGE_RECEIVED）                 │
+│    - 提取 <oeos page> → 更新 OEOS-Pages                 │
+│    - 提取 <OEOS-Abstracts> → 更新 OEOS-Abstracts        │
+│    - 自动提取 goto → 更新 OEOS-Graph                    │
+│    - 重新计算 OEOS-DynamicContext                        │
+│    - 正则表达式过滤消息显示（只显示 Abstracts 内容）    │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 8. OEOS 播放器加载 forest 页面                           │
+│    - 从 OEOS-Pages 读取                                  │
+│    - 编译并渲染                                          │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ 9. 监听页面变化事件                                      │
+│    - OEOS 引擎调用 window.oeosApi.updateState()         │
+│    - 发送当前页面 ID 和所有变量                          │
+│    - 更新 OEOS-State：                                   │
+│      start > forest(hp:100,gold:50)                      │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+                   回到步骤 1
+```
+
+### 关键技术点
+
+**1. 聊天记录提取**
+- 遍历 `chat` 数组的所有消息
+- 使用正则提取 `<oeos page>...</oeos page>` 和 `<OEOS-Abstracts>...</OEOS-Abstracts>`
+- 聚合所有提取的内容到对应的 World Info 条目
+
+**2. 正则表达式过滤**
+- AI 回复后，ST 自动应用正则表达式
+- 提取 `<OEOS-Abstracts>` 内容替换整个消息显示
+- 原始数据（JSONL）保持不变
+
+**3. 动态上下文计算**
+- 从 OEOS-State 获取当前位置（最后一个页面）
+- 从 OEOS-Graph 获取相关页面 ID（向前 5 个，向后 1 个）
+- 从 OEOS-Pages 提取这些 ID 的完整内容
+- 保存到 OEOS-DynamicContext
+
+**4. 变量追踪**
+- OEOS 引擎在页面跳转时调用 `Storage.getAllVariables()`
+- 格式化为 `pageId(var1:val1,var2:val2)`
+- 追加到 OEOS-State
 
 ---
 
