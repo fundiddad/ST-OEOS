@@ -56,14 +56,14 @@
 #### 阶段 1：核心数据流（优先级：🔴 最高）✅ **已完成 (2025-10-12)**
 
 **1.1 修正 World Info 条目实现**
-- [x] 修正 OEOS-Pages 的数据格式（移除错误的 `<oeos page id="xxx">` 包装）
+- [x] 修正 OEOS-Pages 的数据格式（移除错误的 `<OEOS-Pages id="xxx">` 包装）
 - [x] 修正 OEOS-Abstracts 的提取和存储逻辑
 - [x] 修正 OEOS-DynamicContext 的计算逻辑
 - [x] 修正 OEOS-State 的变量记录格式
 - [x] 修正 OEOS-Graph 的自动提取逻辑
 
 **1.2 聊天记录提取系统**
-- [x] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<oeos page>` 标签
+- [x] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<OEOS-Pages>` 标签
 - [x] 实现 `extractAbstractsFromChat()` - 从 chat 数组提取 `<OEOS-Abstracts>` 标签
 - [x] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
 - [x] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
@@ -129,7 +129,7 @@
 #### 1. **World Info 条目实现错误** ✅ **已修正 (2025-10-12)**
 
 **问题描述**：
-- `OEOS-Pages` 错误地添加了 `<oeos page id="xxx">` 包装（正确格式：`<oeos page>` 无 `id` 属性）
+- `OEOS-Pages` 错误地添加了 `<OEOS-Pages id="xxx">` 包装（正确格式：`<OEOS-Pages>` 无 `id` 属性）
 - 存储格式错误：应该存储纯 OEOScript v4 代码，不应包含任何 XML 标签
 - `OEOS-Abstracts` 的提取逻辑未实现
 - `OEOS-DynamicContext` 的计算逻辑不正确（应该向前 5 个页面，向后 1 个页面）
@@ -137,10 +137,10 @@
 
 **修正方案**：
 - ✅ 修改 `game-state.js` 中的 `updatePageEntry` 函数
-  - 移除 `<oeos page id="xxx">` 包装
+  - 移除 `<OEOS-Pages id="xxx">` 包装
   - 存储纯 OEOScript v4 代码，用 `> pageId` 分隔
 - ✅ 修改 `plugin-bridge.js` 中的 `getPage` 函数
-  - 使用正确的正则表达式提取页面（匹配 `> pageId` 而不是 `<oeos page id="xxx">`）
+  - 使用正确的正则表达式提取页面（匹配 `> pageId` 而不是 `<OEOS-Pages id="xxx">`）
 - ✅ 修改 `plugin-bridge.js` 中的 `initializeGameDataFromChat` 函数
   - 正确处理从聊天记录提取的页面内容
 - ✅ 修改 `context-engine.js` 中的 `extractPageSource` 函数
@@ -163,7 +163,7 @@
 
 **问题描述**：
 - 角色没有配置 OEOS 正则表达式规则
-- AI 回复的 `<oeos page>` 和 `<OEOS-Abstracts>` 标签会污染聊天记录显示
+- AI 回复的 `<OEOS-Pages>` 和 `<OEOS-Abstracts>` 标签会污染聊天记录显示
 
 **修正方案**：
 - ✅ 在 `enableOEOSForCharacter()` 中添加正则表达式配置
@@ -384,7 +384,7 @@ function loadData() {
 
 ### v3.1 (2025-10-12)
 - **重大修正**：修复 World Info 条目的数据格式错误
-  - 修正 `<oeos page>` 标签格式说明（无 `id` 属性）
+  - 修正 `<OEOS-Pages>` 标签格式说明（无 `id` 属性）
   - 修正存储格式（纯 OEOScript v4 代码，无 XML 标签）
   - 更新所有相关函数的实现（`updatePageEntry`, `getPage`, `extractPageSource` 等）
   - 修复 `require is not defined` 错误（改用 ES6 import）

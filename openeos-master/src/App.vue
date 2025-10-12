@@ -668,12 +668,28 @@ html {
   top: 1px;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
+/* 确保整个 Vue 应用填满 #app 容器，并与 #oeos-main-container 大小位置一致 */
 .oeos-app-container {
   height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
-.v-application--wrap {
+/* v-application--wrap 是 Vuetify 自动生成的包装器，需要填满父容器 */
+.oeos-app-container .v-application--wrap {
+  width: 100%;
+  height: 100%;
   min-height: 100%;
+}
+
+/* v-main 填满 v-application--wrap，移除默认 padding */
+.oeos-app-container .v-main {
+  height: 100%;
+  padding: 0 !important;
+}
+
+/* v-main__wrap 填满 v-main */
+.oeos-app-container .v-main__wrap {
+  height: 100%;
 }
 </style>

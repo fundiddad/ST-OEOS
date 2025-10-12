@@ -7,7 +7,7 @@ import OEOSV4Parser from './v4-parser.js';
  * 更新角色专属 World Info 中的页面条目
  * @param {string} worldInfoName - 角色专属的 World Info 名称（如 "test1-OEOS"）
  * @param {string} pageId - 页面 ID
- * @param {string} content - OEOScript v4 内容（不包含 <oeos page> 标签）
+ * @param {string} content - OEOScript v4 内容（不包含 <OEOS-Pages> 标签）
  * @param {string} abstract - 页面摘要
  */
 export async function updatePageEntry(worldInfoName, pageId, content, abstract) {

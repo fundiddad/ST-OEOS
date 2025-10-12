@@ -39,7 +39,7 @@ function parseGraph(graphString) {
 
 /**
  * Extracts the full OEOScript source code for a specific page ID from the main pages content.
- * @param {string} pagesContent - The entire content of the WI-OEOS-Pages entry.
+ * @param {string} pagesContent - The entire content of the OEOS-Pages entry.
  * @param {string} pageId - The ID of the page to extract.
  * @returns {string|null} - The full source code of the page, or null if not found.
  */

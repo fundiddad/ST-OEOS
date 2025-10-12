@@ -166,7 +166,7 @@ if (window.oeosApi) {
 2. OEOS 引擎执行 `goto: forest`
 3. 检查 OEOS-Pages 是否有 `forest` 页面
 4. 如果没有，显示"正在生成..."并请求 AI 生成
-5. AI 回复包含 `<oeos page>` 和 `<OEOS-Abstracts>` 标签
+5. AI 回复包含 `<OEOS-Pages>` 和 `<OEOS-Abstracts>` 标签
 6. 系统自动提取并更新 World Info
 7. 正则表达式过滤消息显示（只显示摘要）
 8. OEOS 播放器加载新页面
@@ -207,7 +207,7 @@ A: 目前支持 OEOScript v4。详见 `oeos-commands.v4.md`。
 A: 存储在角色专属的 World Info 文件中（`data/{user}/worlds/{角色名}-OEOS.json`）。
 
 **Q: AI 生成的页面如何存储？**
-A: AI 回复中的 `<oeos page>` 标签内容会被提取并存储到 OEOS-Pages 条目中。
+A: AI 回复中的 `<OEOS-Pages>` 标签内容会被提取并存储到 OEOS-Pages 条目中。
 
 ## 🤝 贡献
 

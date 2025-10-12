@@ -85,7 +85,7 @@ async function getPage(pageId) {
         }
 
         // 页面未找到，返回占位符页面
-        console.log(`[OEOS] 页面 '${pageId}' 未找到，返回占位符页面`);
+        toastr.info(`[OEOS] 页面 '${pageId}' 未找到，返回占位符页面`);
         return createPlaceholderPage(pageId);
     } catch (error) {
         console.error(`[OEOS] 获取页面 ${pageId} 失败:`, error);
@@ -163,7 +163,7 @@ function extractPagesFromChat(chatArray) {
         }
     }
 
-    console.log(`[OEOS] 从聊天记录中提取了 ${pages.length} 个页面`);
+    toastr.info(`[OEOS] 从聊天记录中提取了 ${pages.length} 个页面`);
     return pages;
 }
 
@@ -193,7 +193,7 @@ function extractAbstractsFromChat(chatArray) {
         }
     }
 
-    console.log(`[OEOS] 从聊天记录中提取了 ${abstracts.length} 个摘要`);
+    toastr.info(`[OEOS] 从聊天记录中提取了 ${abstracts.length} 个摘要`);
     return abstracts;
 }
 
@@ -207,7 +207,7 @@ export async function initializeGameDataFromChat(worldInfoName) {
 
         // 获取聊天记录
         if (!chat || chat.length === 0) {
-            console.log('[OEOS] 聊天记录为空，跳过初始化');
+            toastr.info('[OEOS] 聊天记录为空，跳过初始化');
             return;
         }
 
@@ -216,7 +216,7 @@ export async function initializeGameDataFromChat(worldInfoName) {
         const abstracts = extractAbstractsFromChat(chat);
 
         if (pages.length === 0 && abstracts.length === 0) {
-            console.log('[OEOS] 聊天记录中没有找到 OEOS 数据');
+            toastr.info('[OEOS] 聊天记录中没有找到 OEOS 数据');
             return;
         }
 
@@ -303,7 +303,7 @@ export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
             return;
         }
 
-        console.log(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
+        toastr.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
 
         // 更新每个页面
         for (const { pageId, content } of pages) {
@@ -437,7 +437,7 @@ async function addOEOSRegexToCharacter(charIndex) {
         );
 
         if (existingRegex) {
-            console.log('[OEOS] OEOS 正则表达式已存在');
+            toastr.info('[OEOS] OEOS 正则表达式已存在');
             return;
         }
 
@@ -486,7 +486,7 @@ async function addOEOSRegexToCharacter(charIndex) {
         }
 
         toastr.success('[OEOS] 已为角色添加 OEOS 正则表达式');
-        console.log('[OEOS] OEOS 正则表达式已添加:', oeosRegex);
+        toastr.info('[OEOS] OEOS 正则表达式已添加:', oeosRegex);
     } catch (error) {
         console.error('[OEOS] 添加正则表达式失败:', error);
         toastr.error(`[OEOS] 添加正则表达式失败: ${error.message}`);
@@ -678,7 +678,7 @@ function setupAIResponseListener(worldInfoName) {
         }
     });
 
-    console.log('[OEOS] AI 回复监听器已设置');
+    toastr.info('[OEOS] AI 回复监听器已设置');
 }
 
 /**

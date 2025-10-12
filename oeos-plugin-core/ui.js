@@ -35,6 +35,9 @@ export function injectAndSetupSwapper() {
     }
 
     // 1. Create OEOS UI Container and place it right after the chat element.
+    // 复制 #chat 的计算样式以确保完全一致
+    const chatStyles = window.getComputedStyle(chat);
+
     const oeosMainContainer = document.createElement('div');
     oeosMainContainer.id = 'oeos-main-container';
     Object.assign(oeosMainContainer.style, {
@@ -46,9 +49,11 @@ export function injectAndSetupSwapper() {
 
     const appRoot = document.createElement('div');
     appRoot.id = 'app'; // 修正：改为 'app' 以匹配 Vue 挂载点
-    appRoot.style.height = '100%';
-    appRoot.style.width = '100%';
-    appRoot.style.backgroundColor = '#1e1e1e';
+    Object.assign(appRoot.style, {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#1e1e1e',
+    });
     oeosMainContainer.appendChild(appRoot);
     chat.parentNode.insertBefore(oeosMainContainer, chat.nextSibling);
 

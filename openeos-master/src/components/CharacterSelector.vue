@@ -141,6 +141,16 @@ export default {
 <style scoped>
 .character-selector {
   padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.character-selector .v-card {
+  width: 100%;
+  max-width: 800px;
 }
 
 .character-item {
