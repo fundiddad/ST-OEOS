@@ -192,14 +192,15 @@ export async function updateStateEntry(worldInfoName, newState) {
         }
 
         // 修正：变量记录格式为 (key1:value1,key2:value2)
+        // 即使没有变量也要添加空括号，以便 parseStatePath 正确解析
         const variablesString = Object.keys(newState.variables || {}).length > 0
-            ? `(${Object.entries(newState.variables || {})
+            ? Object.entries(newState.variables || {})
                 .map(([key, value]) => `${key}:${value}`)
-                .join(',')})`
+                .join(',')
             : '';
 
-        // 修正：状态格式为 " > pageId(variables)"
-        const newStateString = ` > ${newState.pageId}${variablesString}`;
+        // 修正：状态格式为 " > pageId(variables)" 或 " > pageId()" 如果没有变量
+        const newStateString = ` > ${newState.pageId}(${variablesString})`;
 
         // 追加到现有状态
         stateEntry.content += newStateString;

@@ -6,7 +6,7 @@ import { saveWorldInfo, loadWorldInfo, updateWorldInfoList } from '../../../worl
 /**
  * Saves content to a World Info entry.
  * @param {string} name - The name of the World Info entry.
- * @param {string} content - The content to save.
+ * @param {object} content - The content to save (World Info JSON object).
  */
 export async function saveWi(name, content) {
     try {
@@ -28,7 +28,7 @@ export async function saveWi(name, content) {
 /**
  * Loads content from a World Info entry.
  * @param {string} name - The name of the World Info entry.
- * @returns {Promise<string>} - The content of the World Info entry.
+ * @returns {Promise<object>} - The World Info JSON object.
  */
 export async function loadWi(name) {
     try {

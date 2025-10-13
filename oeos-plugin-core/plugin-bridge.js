@@ -5,7 +5,7 @@ import { recalculateDynamicContext } from './context-engine.js';
 import { loadWi, saveWi, listenToAiResponse } from './st-api.js';
 
 // 导入 SillyTavern 核心模块
-import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebounced, getRequestHeaders } from '../../../../script.js';
+import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebounced, getRequestHeaders, selectCharacterById } from '../../../../script.js';
 
 
 /**
@@ -634,6 +634,14 @@ export async function bindCharacter(charIndex) {
         const worldInfoName = character.data?.extensions?.world;
         if (!worldInfoName) {
             throw new Error('角色没有绑定 World Info，请先启用 OEOS');
+        }
+
+        // 0. 如有必要，先切换到该角色，确保 this_chid 和 chat 数组正确加载
+        if (String(this_chid) !== String(charIndex)) {
+            toastr.info(`[OEOS] 正在切换到角色 ${character.name}...`);
+            await selectCharacterById(charIndex, { switchMenu: false });
+            // 等待 chat 数组加载完成
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         // 1. 初始化游戏数据条目（Pages、State、Graph、Abstracts、DynamicContext）
