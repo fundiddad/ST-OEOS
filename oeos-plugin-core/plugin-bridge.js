@@ -151,8 +151,9 @@ function extractPagesFromChat(chatArray) {
             const blockContent = blockMatch[1].trim();
 
             // 从块内容中提取各个页面（用 "> pageId" 分隔）
-            // 匹配 "> pageId" 开头的页面
-            const pageRegex = /> (\w+)\n([\s\S]*?)(?=\n> |\n*$)/g;
+            // 兼容：CRLF 换行以及块末尾无换行的情况
+            // 说明：结尾采用 (?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$) 以便匹配到最后一个页面
+            const pageRegex = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
             let pageMatch;
 
             while ((pageMatch = pageRegex.exec(blockContent)) !== null) {
