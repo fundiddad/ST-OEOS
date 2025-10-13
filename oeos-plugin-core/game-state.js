@@ -202,6 +202,25 @@ export async function updateStateEntry(worldInfoName, newState) {
         // 修正：状态格式为 " > pageId(variables)" 或 " > pageId()" 如果没有变量
         const newStateString = ` > ${newState.pageId}(${variablesString})`;
 
+        // 检查是否与最后一个状态完全相同（包括变量），避免重复追加
+        // 这样可以支持同一页面但变量不同的情况，如 D(hp:100) > D(hp:80)
+        const currentContent = stateEntry.content.trim();
+        if (currentContent) {
+            // 匹配所有的 " > pageId(...)" 格式
+            const stateMatches = currentContent.match(/>\s*\w+\s*\([^)]*\)/g);
+            if (stateMatches && stateMatches.length > 0) {
+                // 获取最后一个完整状态（包括变量）
+                const lastState = stateMatches[stateMatches.length - 1].trim();
+                const newStateTrimmed = newStateString.trim();
+
+                // 比较完整的状态字符串（页面ID + 变量）
+                if (lastState === newStateTrimmed) {
+                    console.log(`[OEOS] 跳过完全相同的状态: ${newStateTrimmed}`);
+                    return; // 如果与最后一个状态完全相同，不追加
+                }
+            }
+        }
+
         // 追加到现有状态
         stateEntry.content += newStateString;
 
