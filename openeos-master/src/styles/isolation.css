@@ -3,34 +3,6 @@
  * 防止 Vuetify 的全局样式影响 SillyTavern 的其他元素
  */
 
-/* 强制重置 SillyTavern 元素的字体大小 */
-body,
-html {
-  font-size: 15px !important;
-}
-
-/* 确保 SillyTavern 的所有输入框和文本区域不受影响 */
-#send_textarea,
-#send_form,
-#send_form *,
-#chat,
-#chat *,
-.mes_text,
-.mes_text *,
-input:not(#oeos-main-container input),
-textarea:not(#oeos-main-container textarea),
-button:not(#oeos-main-container button) {
-  font-size: 15px !important;
-  line-height: 1.5 !important;
-}
-
-/* 特别针对发送表单的样式重置 */
-#send_form input[type="text"],
-#send_form textarea {
-  font-size: 15px !important;
-  font-family: var(--mainFontFamily, 'Noto Sans', sans-serif) !important;
-}
-
 /* 隔离 Vuetify 样式到 OEOS 容器内 */
 #oeos-main-container {
   font-size: 16px;
@@ -43,8 +15,34 @@ button:not(#oeos-main-container button) {
   font-family: 'Roboto', sans-serif;
 }
 
-/* 防止 Vuetify 的全局样式泄漏 */
+/* 防止 Vuetify 的全局样式泄漏到 SillyTavern */
 .v-application:not(#oeos-main-container .v-application) {
   all: unset !important;
+}
+
+/* 强制重置 SillyTavern 元素的字体大小，防止被 Vuetify 影响 */
+body:not(#oeos-main-container body),
+html:not(#oeos-main-container html) {
+  font-size: 15px !important;
+}
+
+/* 确保 SillyTavern 的文本区域不受影响，但排除图标按钮 */
+#send_textarea,
+#chat,
+#chat *:not(#oeos-main-container *):not(.interactable):not([class*="fa-"]),
+.mes_text,
+.mes_text *,
+input:not(#oeos-main-container input),
+textarea:not(#oeos-main-container textarea),
+button:not(#oeos-main-container button):not(.interactable) {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+/* 特别针对发送表单的文本输入样式重置，但不影响图标按钮 */
+#send_form input[type="text"],
+#send_form textarea {
+  font-size: 15px !important;
+  font-family: var(--mainFontFamily, 'Noto Sans', sans-serif) !important;
 }
 
