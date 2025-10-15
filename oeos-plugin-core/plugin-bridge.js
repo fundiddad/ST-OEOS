@@ -19,13 +19,6 @@ import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebo
 
 
 
-// 兼容层：将 toastr 调用映射到 console，后续可逐步删除 toastr 依赖
-const toastr = {
-    info: (...args) => console.info(...args),
-    success: (...args) => console.info(...args),
-    warning: (...args) => console.warn(...args),
-    error: (...args) => console.error(...args),
-};
 
 
 // 在角色切换或应用启动后，仅切换 chatHistory 开关（不改变其他 Prompt 预设）
@@ -127,7 +120,7 @@ async function getPage(pageId) {
         }
 
         // 页面未找到，返回占位符页面
-        toastr.info(`[OEOS] 页面 '${pageId}' 未找到，返回占位符页面`);
+        console.info(`[OEOS] 页面 '${pageId}' 未找到，返回占位符页面`);
         return createPlaceholderPage(pageId);
     } catch (error) {
         console.error(`[OEOS] 获取页面 ${pageId} 失败:`, error);
@@ -169,7 +162,7 @@ async function updateState(newState) {
         await recalculateDynamicContext(worldInfoName);
     } catch (error) {
         console.error('[OEOS] 更新状态失败:', error);
-        toastr.error(`[OEOS] 更新状态失败: ${error.message}`);
+        console.error(`[OEOS] 更新状态失败: ${error.message}`);
     }
 }
 
@@ -206,7 +199,7 @@ function extractPagesFromChat(chatArray) {
         }
     }
 
-    toastr.info(`[OEOS] 从聊天记录中提取了 ${pages.length} 个页面`);
+    console.info(`[OEOS] 从聊天记录中提取了 ${pages.length} 个页面`);
     return pages;
 }
 
@@ -236,7 +229,7 @@ function extractAbstractsFromChat(chatArray) {
         }
     }
 
-    toastr.info(`[OEOS] 从聊天记录中提取了 ${abstracts.length} 个摘要`);
+    console.info(`[OEOS] 从聊天记录中提取了 ${abstracts.length} 个摘要`);
     return abstracts;
 }
 
@@ -246,11 +239,11 @@ function extractAbstractsFromChat(chatArray) {
  */
 export async function initializeGameDataFromChat(worldInfoName) {
     try {
-        toastr.info('[OEOS] 正在从聊天记录初始化游戏数据...');
+        console.info('[OEOS] 正在从聊天记录初始化游戏数据...');
 
         // 获取聊天记录
         if (!chat || chat.length === 0) {
-            toastr.info('[OEOS] 聊天记录为空，跳过初始化');
+            console.info('[OEOS] 聊天记录为空，跳过初始化');
             return;
         }
 
@@ -259,7 +252,7 @@ export async function initializeGameDataFromChat(worldInfoName) {
         const abstracts = extractAbstractsFromChat(chat);
 
         if (pages.length === 0 && abstracts.length === 0) {
-            toastr.info('[OEOS] 聊天记录中没有找到 OEOS 数据');
+            console.info('[OEOS] 聊天记录中没有找到 OEOS 数据');
             return;
         }
 
@@ -323,10 +316,10 @@ export async function initializeGameDataFromChat(worldInfoName) {
         // 保存更新后的 World Info
         await saveWi(worldInfoName, worldInfo);
 
-        toastr.success(`[OEOS] 已从聊天记录初始化 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
+        console.info(`[OEOS] 已从聊天记录初始化 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
     } catch (error) {
         console.error('[OEOS] 从聊天记录初始化游戏数据失败:', error);
-        toastr.error(`[OEOS] 初始化失败: ${error.message}`);
+        console.error(`[OEOS] 初始化失败: ${error.message}`);
     }
 }
 
@@ -346,7 +339,7 @@ export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
             return;
         }
 
-        toastr.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
+        console.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
 
         // 更新每个页面
         for (const { pageId, content } of pages) {
@@ -357,10 +350,10 @@ export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
         // 重新计算动态上下文
         await recalculateDynamicContext(worldInfoName);
 
-        toastr.success(`[OEOS] 已更新 ${pages.length} 个页面`);
+        console.info(`[OEOS] 已更新 ${pages.length} 个页面`);
     } catch (error) {
         console.error('[OEOS] 更新游戏数据失败:', error);
-        toastr.error(`[OEOS] 更新失败: ${error.message}`);
+        console.error(`[OEOS] 更新失败: ${error.message}`);
     }
 }
 
@@ -480,7 +473,7 @@ async function addOEOSRegexToCharacter(charIndex) {
         );
 
         if (existingRegex) {
-            toastr.info('[OEOS] OEOS 正则表达式已存在');
+            console.info('[OEOS] OEOS 正则表达式已存在');
             return;
         }
 
@@ -528,11 +521,11 @@ async function addOEOSRegexToCharacter(charIndex) {
             throw new Error('Failed to save character regex scripts');
         }
 
-        toastr.success('[OEOS] 已为角色添加 OEOS 正则表达式');
-        toastr.info('[OEOS] OEOS 正则表达式已添加:', oeosRegex);
+        console.info('[OEOS] 已为角色添加 OEOS 正则表达式');
+        console.info('[OEOS] OEOS 正则表达式已添加:', oeosRegex);
     } catch (error) {
         console.error('[OEOS] 添加正则表达式失败:', error);
-        toastr.error(`[OEOS] 添加正则表达式失败: ${error.message}`);
+        console.error(`[OEOS] 添加正则表达式失败: ${error.message}`);
         throw error;
     }
 }
@@ -544,7 +537,7 @@ async function addOEOSRegexToCharacter(charIndex) {
  */
 export async function enableOEOSForCharacter(charIndex) {
     try {
-        toastr.info(`[OEOS] 正在为角色启用 OEOS...`);
+        console.info(`[OEOS] 正在为角色启用 OEOS...`);
 
         const char = characters[charIndex];
         if (!char) {
@@ -587,7 +580,7 @@ export async function enableOEOSForCharacter(charIndex) {
                 throw new Error('Failed to save character data');
             }
 
-            toastr.success(`[OEOS] 已为角色创建 World Info: ${worldInfoName}`);
+            console.info(`[OEOS] 已为角色创建 World Info: ${worldInfoName}`);
         }
 
         // 2. 在 World Info 中添加 OEOS-character 标记条目
@@ -646,7 +639,7 @@ export async function enableOEOSForCharacter(charIndex) {
             };
 
             await saveWi(worldInfoName, worldInfo);
-            toastr.success(`[OEOS] 已为角色添加 OEOS 标记`);
+            console.info(`[OEOS] 已为角色添加 OEOS 标记`);
         }
 
         // 3. 为角色添加 OEOS 正则表达式规则
@@ -655,9 +648,9 @@ export async function enableOEOSForCharacter(charIndex) {
         // 4. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
         //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
-        // toastr.success(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
+        // console.info(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
     } catch (error) {
-        toastr.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
+        console.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
         console.error('[OEOS] Error enabling OEOS for character:', error);
         throw error;
     }
@@ -669,7 +662,7 @@ export async function enableOEOSForCharacter(charIndex) {
  */
 export async function bindCharacter(charIndex) {
     try {
-        // toastr.info(`[OEOS] 正在绑定角色...`);
+        // console.info(`[OEOS] 正在绑定角色...`);
 
         const character = characters[charIndex];
         if (!character) {
@@ -684,7 +677,7 @@ export async function bindCharacter(charIndex) {
 
         // 0. 如有必要，先切换到该角色，确保 this_chid 和 chat 数组正确加载
         if (String(this_chid) !== String(charIndex)) {
-            toastr.info(`[OEOS] 正在切换到角色 ${character.name}...`);
+            console.info(`[OEOS] 正在切换到角色 ${character.name}...`);
             await selectCharacterById(charIndex, { switchMenu: false });
             // 等待 chat 数组加载完成
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -708,9 +701,9 @@ export async function bindCharacter(charIndex) {
         // 6. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
         //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
-        // toastr.success(`[OEOS] 角色 ${character.name} 绑定成功`);
+        // console.info(`[OEOS] 角色 ${character.name} 绑定成功`);
     } catch (error) {
-        toastr.error(`[OEOS] 绑定角色失败: ${error.message}`);
+        console.error(`[OEOS] 绑定角色失败: ${error.message}`);
         throw error;
     }
 }
@@ -735,7 +728,7 @@ function setupAIResponseListener(worldInfoName) {
         }
     });
 
-    toastr.info('[OEOS] AI 回复监听器已设置');
+    console.info('[OEOS] AI 回复监听器已设置');
 }
 
 /**
@@ -848,9 +841,9 @@ async function initializeGameDataEntries(worldInfoName) {
 
     if (createdCount > 0) {
         await saveWi(worldInfoName, worldInfo);
-        // toastr.success(`[OEOS] 已在 ${worldInfoName} 中创建 ${createdCount} 个游戏数据条目`);
+        // console.info(`[OEOS] 已在 ${worldInfoName} 中创建 ${createdCount} 个游戏数据条目`);
     } else {
-        // toastr.info(`[OEOS] ${worldInfoName} 中的游戏数据条目已存在`);
+        // console.info(`[OEOS] ${worldInfoName} 中的游戏数据条目已存在`);
     }
 }
 
@@ -860,7 +853,7 @@ async function initializeGameDataEntries(worldInfoName) {
 async function activateCharacterWorldInfo(worldInfoName) {
     // 注意：这里需要访问 selected_world_info，可能需要从其他模块导入
     // 暂时使用简单实现
-    toastr.info(`[OEOS] 激活 World Info: ${worldInfoName}`);
+    console.info(`[OEOS] 激活 World Info: ${worldInfoName}`);
 }
 
 /**
@@ -872,7 +865,7 @@ function activateCharacterRegex(charIndex) {
     // 暂时使用简单实现
     const char = characters[charIndex];
     if (char) {
-        toastr.info(`[OEOS] 激活角色正则表达式: ${char.name}`);
+        console.info(`[OEOS] 激活角色正则表达式: ${char.name}`);
     }
 }
 

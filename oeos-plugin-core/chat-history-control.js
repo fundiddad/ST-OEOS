@@ -125,13 +125,13 @@ export function isChatHistoryEnabled(characterId = null) {
 export function enableChatHistory(characterId = null) {
     const promptManager = getPromptManager();
     if (!promptManager) {
-        toastr.error('[OEOS] 无法访问 Prompt Manager');
+        console.error('[OEOS] 无法访问 Prompt Manager');
         return false;
     }
     
     const promptEntry = getChatHistoryPromptEntry(characterId);
     if (!promptEntry) {
-        toastr.error('[OEOS] 无法找到 chatHistory prompt entry');
+        console.error('[OEOS] 无法找到 chatHistory prompt entry');
         return false;
     }
     
@@ -146,12 +146,12 @@ export function enableChatHistory(characterId = null) {
             promptManager.render();
         }
         
-        toastr.success('[OEOS] 已启用聊天历史');
+        console.info('[OEOS] 已启用聊天历史');
         console.log('[OEOS] chatHistory 已启用');
         return true;
     } catch (error) {
         console.error('[OEOS] 启用 chatHistory 失败:', error);
-        toastr.error(`[OEOS] 启用失败: ${error.message}`);
+        console.error(`[OEOS] 启用失败: ${error.message}`);
         return false;
     }
 }
@@ -164,13 +164,13 @@ export function enableChatHistory(characterId = null) {
 export function disableChatHistory(characterId = null) {
     const promptManager = getPromptManager();
     if (!promptManager) {
-        toastr.error('[OEOS] 无法访问 Prompt Manager');
+        console.error('[OEOS] 无法访问 Prompt Manager');
         return false;
     }
     
     const promptEntry = getChatHistoryPromptEntry(characterId);
     if (!promptEntry) {
-        toastr.error('[OEOS] 无法找到 chatHistory prompt entry');
+        console.error('[OEOS] 无法找到 chatHistory prompt entry');
         return false;
     }
     
@@ -185,12 +185,12 @@ export function disableChatHistory(characterId = null) {
             promptManager.render();
         }
         
-        toastr.success('[OEOS] 已禁用聊天历史');
+        console.info('[OEOS] 已禁用聊天历史');
         console.log('[OEOS] chatHistory 已禁用');
         return true;
     } catch (error) {
         console.error('[OEOS] 禁用 chatHistory 失败:', error);
-        toastr.error(`[OEOS] 禁用失败: ${error.message}`);
+        console.error(`[OEOS] 禁用失败: ${error.message}`);
         return false;
     }
 }
@@ -258,7 +258,7 @@ export function enableChatHistorySilent(characterId = null) {
             promptManager.render();
         }
 
-        toastr.success('[OEOS] 已启用聊天历史');
+        console.info('[OEOS] 已启用聊天历史');
         console.log('[OEOS] chatHistory 已启用（自动模式）');
         return true;
     } catch (error) {
@@ -297,7 +297,7 @@ export function disableChatHistorySilent(characterId = null) {
             promptManager.render();
         }
 
-        toastr.success('[OEOS] 已禁用聊天历史');
+        console.info('[OEOS] 已禁用聊天历史');
         console.log('[OEOS] chatHistory 已禁用（自动模式）');
         return true;
     } catch (error) {

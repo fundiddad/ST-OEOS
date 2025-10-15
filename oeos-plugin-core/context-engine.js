@@ -139,10 +139,10 @@ export async function recalculateDynamicContext(worldInfoName) {
         await saveWi(worldInfoName, worldInfo);
 
         console.log(`[OEOS] 动态上下文已重新计算，当前页面: ${currentPageId}`);
-        toastr.info(`[OEOS] 动态上下文已更新（页面: ${currentPageId}）`);
+        console.info(`[OEOS] 动态上下文已更新（页面: ${currentPageId}）`);
     } catch (error) {
         console.error('[OEOS] 重新计算动态上下文失败:', error);
-        toastr.error(`[OEOS] 更新动态上下文失败: ${error.message}`);
+        console.error(`[OEOS] 更新动态上下文失败: ${error.message}`);
     }
 }
 
