@@ -3,26 +3,59 @@
 import { updateStateEntry, updatePageEntry } from './game-state.js';
 import { recalculateDynamicContext } from './context-engine.js';
 import { loadWi, saveWi, listenToAiResponse } from './st-api.js';
+import {
+    enableChatHistory,
+    disableChatHistory,
+    toggleChatHistory,
+    isChatHistoryEnabled,
+    getChatHistoryStatus,
+    waitForPromptManager,
+    enableChatHistorySilent,
+    disableChatHistorySilent
+} from './chat-history-control.js';
 
 // 导入 SillyTavern 核心模块
 import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebounced, getRequestHeaders, selectCharacterById } from '../../../../script.js';
 
+
+
+// 在角色切换或应用启动后，仅切换 chatHistory 开关（不改变其他 Prompt 预设）
+(function setupChatHistoryAutoToggle() {
+    try {
+        const applyToggle = async (idLike) => {
+            const selectedId = Number(idLike ?? this_chid);
+            const isOEOS = await isOEOSCharacter(selectedId);
+            if (isOEOS) {
+                disableChatHistorySilent();
+            } else {
+                enableChatHistorySilent();
+            }
+        };
+
+        // 1) 首次加载某个聊天
+        eventSource.on('chatLoaded', async (event) => {
+            await applyToggle(event?.detail?.id);
+        });
+        // 2) 聊天切换（包括启动完成后的自动触发）
+        eventSource.on(event_types.CHAT_CHANGED, async () => {
+            await applyToggle(this_chid);
+        });
+        // 3) 应用就绪后兜底检查一次，避免上次 OEOS 关闭状态遗留
+        eventSource.on(event_types.APP_READY, async () => {
+            await applyToggle(this_chid);
+        });
+        // 4) 立即兜底一次（注册监听后可能错过早期事件）
+        setTimeout(() => { applyToggle(this_chid); }, 0);
+    } catch (err) {
+        console.warn('[OEOS] setupChatHistoryAutoToggle 失败：', err);
+    }
+})();
 
 /**
  * 注意：不再使用全局的 World Info 文件
  * 每个角色有自己的 World Info 文件（如 test1-OEOS.json）
  * 该文件包含多个条目（entries）
  */
-
-/**
- * 初始化游戏数据（已废弃）
- * 注意：此函数已废弃，不应再使用
- * 游戏数据应该存储在角色专属的 World Info 中
- */
-async function initGameData() {
-    // 此函数已废弃
-    console.warn('[OEOS] initGameData 已废弃，请使用 enableOEOSForCharacter');
-}
 
 
 /**
@@ -610,6 +643,9 @@ export async function enableOEOSForCharacter(charIndex) {
         // 3. 为角色添加 OEOS 正则表达式规则
         await addOEOSRegexToCharacter(charIndex);
 
+        // 4. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
+        //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
+
         // toastr.success(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
     } catch (error) {
         toastr.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
@@ -659,6 +695,9 @@ export async function bindCharacter(charIndex) {
 
         // 5. 监听 AI 回复事件
         setupAIResponseListener(worldInfoName);
+
+        // 6. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
+        //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
         // toastr.success(`[OEOS] 角色 ${character.name} 绑定成功`);
     } catch (error) {
@@ -830,7 +869,7 @@ function activateCharacterRegex(charIndex) {
 
 // 使用 ES6 模块导出，不使用 window 对象
 export {
-    initGameData,
+    
     getPage,
     updateState,
     updatePageEntry as updatePage,
@@ -842,7 +881,7 @@ if (!window.oeosApi) {
     window.oeosApi = {};
 }
 Object.assign(window.oeosApi, {
-    initGameData,
+    
     getPage,
     updateState,
     updatePage: updatePageEntry,
@@ -855,4 +894,13 @@ Object.assign(window.oeosApi, {
     enableOEOSForCharacter,             // 启用 OEOS 支持
     initializeGameDataFromChat,         // 从聊天记录初始化游戏数据
     updateGameDataFromAIResponse,       // AI 回复后更新游戏数据
+    // 聊天历史控制
+    enableChatHistory,                  // 启用聊天历史（显示提示）
+    disableChatHistory,                 // 禁用聊天历史（显示提示）
+    toggleChatHistory,                  // 切换聊天历史状态
+    isChatHistoryEnabled,               // 检查聊天历史是否启用
+    getChatHistoryStatus,               // 获取聊天历史状态信息
+    waitForPromptManager,               // 等待 Prompt Manager 初始化
+    enableChatHistorySilent,            // 启用聊天历史（静默模式）
+    disableChatHistorySilent,           // 禁用聊天历史（静默模式）
 });

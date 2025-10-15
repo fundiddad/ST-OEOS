@@ -535,7 +535,7 @@ Vue 组件渲染（say, choice, image 等）
 │  │                      │         │                      │ │
 │  │  - characters        │◄────────│  - getCharacters()   │ │
 │  │  - chat              │  import │  - bindCharacter()   │ │
-│  │  - world_info        │         │  - initGameData()    │ │
+│  │  - world_info        │         │                      │ │
 │  │  - eventSource       │         │                      │ │
 │  └──────────────────────┘         └──────────────────────┘ │
 │                                             ▲                │
@@ -640,12 +640,12 @@ OEOS 播放器渲染页面
 - 插件核心使用 ES6 `import/export`
 - 仅在必要时暴露 `window.oeosApi`（供 Vue 应用使用）
 
-### 2. 使用 toastr 通知系统，而非 console
+<!-- ### 2. 使用 toastr 通知系统，而非 console
 - ✅ 使用 `toastr.info()` 显示信息
 - ✅ 使用 `toastr.success()` 显示成功
 - ✅ 使用 `toastr.warning()` 显示警告
 - ✅ 使用 `toastr.error()` 显示错误
-- ❌ 避免使用 `console.log()` 作为用户反馈
+- ❌ 避免使用 `console.log()` 作为用户反馈 -->
 
 ### 3. 优先使用 SillyTavern 原生 API
 - 不重复造轮子

@@ -138,16 +138,13 @@ Vue 应用通过全局 API (`window.oeosApi`) 与插件通信，实现完全解�
 ```javascript
 // 插件暴露 API
 window.oeosApi = {
-    initGameData,
+    
     getPage,
     updateState,
     bindCharacter,
 };
 
-// Vue 应用调用 API
-if (window.oeosApi) {
-    await window.oeosApi.initGameData();
-}
+
 ```
 
 ### 角色专属 World Info

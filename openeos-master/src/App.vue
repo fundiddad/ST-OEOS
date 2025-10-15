@@ -209,10 +209,10 @@ export default {
       this.loading = true;
       // 使用全局 API（解耦方案）
       try {
-        if (!window.oeosApi || !window.oeosApi.getPage || !window.oeosApi.initGameData) {
+        if (!window.oeosApi || !window.oeosApi.getPage) {
           throw new Error('OEOS API not available. Please ensure the plugin is loaded.');
         }
-        await window.oeosApi.initGameData();
+        // 角色已通过 bindCharacter 初始化所需数据，这里直接读取起始页面
         const startPageScript = await window.oeosApi.getPage('start');
 
         if (!startPageScript) {
