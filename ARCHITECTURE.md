@@ -640,12 +640,11 @@ OEOS 播放器渲染页面
 - 插件核心使用 ES6 `import/export`
 - 仅在必要时暴露 `window.oeosApi`（供 Vue 应用使用）
 
-<!-- ### 2. 使用 toastr 通知系统，而非 console
-- ✅ 使用 `toastr.info()` 显示信息
-- ✅ 使用 `toastr.success()` 显示成功
-- ✅ 使用 `toastr.warning()` 显示警告
-- ✅ 使用 `toastr.error()` 显示错误
-- ❌ 避免使用 `console.log()` 作为用户反馈 -->
+<!-- ### 2. 使用 console 输出日志
+- ✅ 使用 `console.info()` 显示信息
+- ✅ 使用 `console.error()` 显示错误
+- ✅ 使用 `console.warn()` 显示警告
+- ✅ 使用 `console.log()` 调试输出 -->
 
 ### 3. 优先使用 SillyTavern 原生 API
 - 不重复造轮子
@@ -924,7 +923,7 @@ OEOS 播放器渲染页面
 
 ### v2.0 (2025-10-11)
 - 添加 OEOS 角色标记系统
-- 添加 toastr 通知系统原则
+- 改为 console 日志输出原则
 
 ### v1.0 (2025-10-10)
 - 初始版本

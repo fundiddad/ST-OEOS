@@ -19,6 +19,15 @@ import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebo
 
 
 
+// 兼容层：将 toastr 调用映射到 console，后续可逐步删除 toastr 依赖
+const toastr = {
+    info: (...args) => console.info(...args),
+    success: (...args) => console.info(...args),
+    warning: (...args) => console.warn(...args),
+    error: (...args) => console.error(...args),
+};
+
+
 // 在角色切换或应用启动后，仅切换 chatHistory 开关（不改变其他 Prompt 预设）
 (function setupChatHistoryAutoToggle() {
     try {
@@ -869,7 +878,7 @@ function activateCharacterRegex(charIndex) {
 
 // 使用 ES6 模块导出，不使用 window 对象
 export {
-    
+
     getPage,
     updateState,
     updatePageEntry as updatePage,
@@ -881,7 +890,7 @@ if (!window.oeosApi) {
     window.oeosApi = {};
 }
 Object.assign(window.oeosApi, {
-    
+
     getPage,
     updateState,
     updatePage: updatePageEntry,

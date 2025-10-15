@@ -309,17 +309,17 @@ SillyTavern-release/data/{user}/worlds/
 
 #### 2. 错误处理
 - 使用 `try-catch` 捕获异常
-- 使用 `toastr` 显示错误信息给用户
+- 使用 `console` 显示错误信息给用户
 - 在控制台记录详细错误信息（用于调试）
 
 示例：
 ```javascript
 try {
     await someOperation();
-    toastr.success('[OEOS] 操作成功');
+    console.info('[OEOS] 操作成功');
 } catch (error) {
     console.error('[OEOS] 详细错误:', error);
-    toastr.error(`[OEOS] 操作失败: ${error.message}`);
+    console.error(`[OEOS] 操作失败: ${error.message}`);
 }
 ```
 
@@ -353,8 +353,8 @@ function loadData() {
 - ❌ 不要创建全局 WI 存储角色数据（如 `WI-OEOS-CharacterContext`）
 
 #### 2. 通知系统
-- ✅ 使用 `toastr` 提供用户反馈
-- ❌ 不要仅用 `console.log`（用户看不到）
+- ✅ 使用 `console` 提供用户反馈
+- ✅ 统一使用 `console.info`/`console.warn`/`console.error` 输出信息
 
 #### 3. 事件处理
 - ✅ 订阅 SillyTavern 事件（`eventSource.on()`）
@@ -374,7 +374,7 @@ function loadData() {
 
 #### 3. 调试工具
 - `console.log(window.oeosApi)` - 检查 API 是否加载
-- `toastr.info('测试')` - 测试通知系统
+- `console.info('测试')` - 测试日志输出
 - Chrome DevTools - 查看网络请求和错误
 - SillyTavern 控制台 - 查看服务器日志
 
@@ -402,7 +402,7 @@ function loadData() {
 ### v2.0 (2025-10-11)
 - 大幅简化，移除重复内容
 - 更新实现状态
-- 添加 toastr 通知系统
+- 将通知系统改为使用 console 输出
 
 ### v1.0 (2025-10-10)
 - 初始版本
