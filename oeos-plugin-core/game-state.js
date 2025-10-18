@@ -1,7 +1,6 @@
 // Manages the game state by reading from and writing to the dedicated World Info entries.
 
 import { saveWi, loadWi, getPresetByName, savePresetDirect } from './st-api.js';
-import OEOSV4Parser from './v4-parser.js';
 
 
 // 兼容层：将 toastr 调用映射到 console，后续可逐步删除 toastr 依赖
@@ -155,8 +154,12 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
 
         // 3. 更新 Graph 条目
         try {
-            const pageJson = OEOSV4Parser.toV1(content);
-            const gotos = findGotosInCommands(pageJson.pages[Object.keys(pageJson.pages)[0]]);
+            console.log(`[OEOS] 开始提取页面 '${pageId}' 的 goto 命令`);
+            console.log(`[OEOS] 页面内容长度: ${content.length} 字符`);
+
+            // 使用正则表达式直接提取 goto 目标，不依赖解析器
+            const gotos = extractGotoTargets(content);
+            console.log(`[OEOS] 提取到的 goto 目标:`, gotos);
 
             let graphEntry = null;
             for (const entry of Object.values(worldInfo.entries)) {
@@ -171,19 +174,27 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
             }
 
             if (gotos.length > 0) {
-                // 修正：图谱格式为 "pageId > child1, child2;"
+                // 图谱格式：pageId > child1, child2;
                 const graphLine = `${pageId} > ${gotos.join(', ')};`;
-                const graphRegex = new RegExp(`${pageId} >.*?;`, 'g');
+                console.log(`[OEOS] 生成的图谱行: ${graphLine}`);
+
+                // 检查是否已存在该页面的图谱
+                const graphRegex = new RegExp(`^${pageId}\\s*>.*?;`, 'm');
                 if (graphRegex.test(graphEntry.content)) {
                     // 替换现有图谱
                     graphEntry.content = graphEntry.content.replace(graphRegex, graphLine);
+                    console.log(`[OEOS] 替换了页面 '${pageId}' 的图谱`);
                 } else {
                     // 添加新图谱
-                    graphEntry.content += `\n${graphLine}`;
+                    graphEntry.content += `${graphLine}\n`;
+                    console.log(`[OEOS] 添加了页面 '${pageId}' 的图谱`);
                 }
+            } else {
+                console.log(`[OEOS] 页面 '${pageId}' 没有 goto 命令，跳过图谱更新`);
             }
         } catch (e) {
-            console.error(`[OEOS] 解析 goto 命令失败:`, e);
+            console.error(`[OEOS] 提取 goto 命令失败:`, e);
+            console.error(`[OEOS] 错误堆栈:`, e.stack);
             toastr.warning(`[OEOS] 无法提取页面 '${pageId}' 的跳转关系: ${e.message}`);
         }
 
@@ -192,18 +203,31 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
 
         // 同步 Graph 到预设文件
         let graphEntry = null;
+        let summaryEntry = null;
         for (const entry of Object.values(worldInfo.entries)) {
             if (entry.comment === 'Graph') {
                 graphEntry = entry;
-                break;
+            } else if (entry.comment === 'summary') {
+                summaryEntry = entry;
             }
         }
+
         if (graphEntry) {
             await updatePresetPromptContent(
                 '小猫之神-oeos',
                 '492188e4-a606-41ae-94ea-d8977c9151b5',
                 'Graph',
                 graphEntry.content
+            );
+        }
+
+        // 同步 summary 到预设文件
+        if (summaryEntry) {
+            await updatePresetPromptContent(
+                '小猫之神-oeos',
+                'cd7528e9-3f8a-4f89-9605-9925a9ec2c76',
+                'summary',
+                summaryEntry.content
             );
         }
 
@@ -216,37 +240,26 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
 }
 
 /**
- * Recursively finds all goto targets in a command list.
- * @param {Array<Object>} commands - The list of commands to search through.
- * @returns {Array<string>} - A list of unique goto targets.
+ * 从 OEOScript v4 代码中提取所有 goto 目标
+ * 使用正则表达式直接提取，不依赖解析器
+ * @param {string} content - OEOScript v4 代码
+ * @returns {Array<string>} - 提取到的 goto 目标列表（去重）
  */
-function findGotosInCommands(commands) {
-    let targets = [];
-    if (!commands) return targets;
+function extractGotoTargets(content) {
+    const targets = [];
 
-    for (const command of commands) {
-        const commandType = Object.keys(command)[0];
-        const commandData = command[commandType];
+    // 匹配所有 goto 命令
+    // 格式1: goto target
+    // 格式2: -> goto target
+    // 格式3: choice 选项中的 -> goto target
+    const gotoRegex = /(?:->)?\s*goto\s+(\w+)/g;
 
-        if (commandType === 'goto') {
-            targets.push(commandData.target);
-        }
-        // Recursively search in nested commands (if, choice options, etc.)
-        if (commandData.commands) {
-            targets = targets.concat(findGotosInCommands(commandData.commands));
-        }
-        if (commandData.elseCommands) {
-            targets = targets.concat(findGotosInCommands(commandData.elseCommands));
-        }
-        if (commandData.options) {
-            for (const option of commandData.options) {
-                if (option.commands) {
-                    targets = targets.concat(findGotosInCommands(option.commands));
-                }
-            }
-        }
+    let match;
+    while ((match = gotoRegex.exec(content)) !== null) {
+        targets.push(match[1]);
     }
-    // Return unique targets
+
+    // 返回去重后的目标列表
     return [...new Set(targets)];
 }
 

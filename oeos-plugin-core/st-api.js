@@ -212,13 +212,22 @@ export async function savePreset(presetName, presetData) {
  */
 export function getPresetByName(presetName) {
     try {
+        console.log(`[OEOS] 开始获取预设文件 "${presetName}"`);
         const manager = getPresetManagerSafe();
         if (!manager) {
             console.warn('[OEOS] PresetManager 不可用');
             return null;
         }
+        console.log(`[OEOS] PresetManager 获取成功:`, manager);
 
         const { source } = getPresetSnapshot(manager, presetName);
+        console.log(`[OEOS] 预设文件 "${presetName}" 原始对象:`, source ? '存在' : '不存在');
+        if (source) {
+            console.log(`[OEOS] 预设文件有 prompts 数组:`, Array.isArray(source.prompts));
+            if (Array.isArray(source.prompts)) {
+                console.log(`[OEOS] prompts 数量:`, source.prompts.length);
+            }
+        }
         return source;
     } catch (error) {
         console.error(`[OEOS] 获取预设文件 "${presetName}" 失败:`, error);
@@ -234,14 +243,21 @@ export function getPresetByName(presetName) {
  */
 export async function savePresetDirect(presetName, presetSource) {
     try {
+        console.log(`[OEOS] 开始保存预设文件 "${presetName}"`);
         const manager = getPresetManagerSafe();
         if (!manager) {
             console.warn('[OEOS] PresetManager 不可用，无法保存预设文件');
             return false;
         }
 
+        console.log(`[OEOS] 调用 manager.savePreset()，参数:`, {
+            name: presetName,
+            hasPrompts: Array.isArray(presetSource?.prompts),
+            promptsCount: presetSource?.prompts?.length
+        });
+
         // 直接保存原始对象（skipUpdate: true 避免触发不必要的更新）
-        await manager.savePreset(presetName, presetSource, { skipUpdate: true });
+        await manager.savePreset(presetName, presetSource, { skipUpdate: false });
 
         console.info(`[OEOS] 预设文件 "${presetName}" 保存成功`);
         return true;

@@ -2,7 +2,7 @@
 
 import { updateStateEntry, updatePageEntry } from './game-state.js';
 import { recalculateDynamicContext } from './context-engine.js';
-import { loadWi, saveWi, listenToAiResponse, loadPreset, savePreset } from './st-api.js';
+import { loadWi, saveWi, listenToAiResponse, loadPreset, savePreset, getPresetByName, savePresetDirect } from './st-api.js';
 import {
     enableChatHistory,
     disableChatHistory,
@@ -162,6 +162,60 @@ async function updateState(newState) {
 }
 
 /**
+ * 更新预设文件中指定提示词的 XML 标签内容
+ * @param {string} presetName - 预设文件名称
+ * @param {string} promptIdentifier - 提示词的 identifier
+ * @param {string} tagName - XML 标签名称
+ * @param {string} newContent - 新的标签内容
+ * @returns {Promise<boolean>} - 是否更新成功
+ */
+async function updatePresetPromptContent(presetName, promptIdentifier, tagName, newContent) {
+    try {
+        console.info(`[OEOS] 开始同步 <${tagName}> 到预设文件 "${presetName}"`);
+
+        // 获取预设文件的原始对象（可以直接修改）
+        const preset = getPresetByName(presetName);
+        if (!preset) {
+            console.warn(`[OEOS] 预设文件 "${presetName}" 不存在，跳过同步`);
+            return false;
+        }
+
+        if (!preset.prompts || !Array.isArray(preset.prompts)) {
+            console.warn(`[OEOS] 预设文件 "${presetName}" 格式错误：缺少 prompts 数组`);
+            return false;
+        }
+
+        const prompt = preset.prompts.find(p => p.identifier === promptIdentifier);
+        if (!prompt) {
+            console.warn(`[OEOS] 在预设文件中未找到 identifier 为 "${promptIdentifier}" 的提示词`);
+            return false;
+        }
+
+        // 使用正则表达式替换 XML 标签内容
+        const tagRegex = new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'i');
+        const match = prompt.content.match(tagRegex);
+
+        if (match) {
+            // 替换标签内容
+            const newTagContent = `<${tagName}>\n${newContent}\n</${tagName}>`;
+            prompt.content = prompt.content.replace(tagRegex, newTagContent);
+        } else {
+            console.warn(`[OEOS] 在提示词中未找到 <${tagName}> 标签`);
+            return false;
+        }
+
+        // 保存预设文件
+        await savePresetDirect(presetName, preset);
+
+        console.info(`[OEOS] 已成功同步 <${tagName}> 到预设文件`);
+        return true;
+    } catch (error) {
+        console.error(`[OEOS] 同步 <${tagName}> 到预设文件失败:`, error);
+        return false;
+    }
+}
+
+/**
  * 从聊天记录中提取所有 <Pages> 标签
  * 注意：<Pages> 标签无 id 属性，一个标签内可能包含多个页面
  * @param {Array} chatArray - SillyTavern 的 chat 数组
@@ -214,14 +268,21 @@ function extractSummaryFromChat(chatArray) {
         while ((blockMatch = summaryBlockRegex.exec(message.mes)) !== null) {
             const blockContent = blockMatch[1].trim();
 
-            // 从块内容中提取各个摘要（用 "> pageId" 分隔）
-            const summaryRegex = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
-            let summaryMatch;
+            // 从块内容中提取各个摘要
+            // 格式：pageId: 摘要文本; 或 pageId: 摘要文本（每行一个）
+            const lines = blockContent.split(/\r?\n/);
 
-            while ((summaryMatch = summaryRegex.exec(blockContent)) !== null) {
-                const pageId = summaryMatch[1].trim();
-                const abstract = summaryMatch[2].trim();
-                summaries.push({ pageId, abstract });
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+
+                // 匹配格式：pageId: 摘要文本 或 pageId: 摘要文本;
+                const match = trimmedLine.match(/^(\w+)\s*:\s*(.+?)(?:;)?$/);
+                if (match) {
+                    const pageId = match[1].trim();
+                    const abstract = match[2].trim();
+                    summaries.push({ pageId, abstract });
+                }
             }
         }
     }
@@ -261,47 +322,40 @@ export async function initializeGameDataFromChat(worldInfoName) {
             return;
         }
 
-        // 查找 Pages 和 summary 条目
-        let pagesEntry = null;
-        let summaryEntry = null;
-
-        for (const entry of Object.values(worldInfo.entries)) {
-            if (entry.comment === 'Pages') {
-                pagesEntry = entry;
-            } else if (entry.comment === 'summary') {
-                summaryEntry = entry;
-            }
-        }
-
-        if (!pagesEntry || !summaryEntry) {
-            console.warn('[OEOS] 缺少必要的条目');
-            return;
-        }
-
-        // 更新 Pages 条目（去重）
+        // 使用 updatePageEntry 来更新每个页面（这样会自动更新 Graph）
         for (const { pageId, content } of pages) {
-            // 检查页面是否已存在
-            const pageExists = pagesEntry.content.includes(`> ${pageId}\n`);
-            if (!pageExists) {
-                // 追加新页面
-                pagesEntry.content += `\n> ${pageId}\n${content}\n`;
-                console.info(`[OEOS] 添加页面: ${pageId}`);
-            }
+            // 查找对应的摘要
+            const summary = summaries.find(s => s.pageId === pageId);
+            const abstract = summary ? summary.abstract : `页面 ${pageId}`;
+
+            // 调用 updatePageEntry 来更新页面、摘要和图谱
+            await updatePageEntry(worldInfoName, pageId, content, abstract);
+            console.info(`[OEOS] 初始化页面: ${pageId}`);
         }
 
-        // 更新 summary 条目（去重）
-        for (const { pageId, abstract } of summaries) {
-            // 检查摘要是否已存在
-            const summaryExists = summaryEntry.content.includes(`> ${pageId}\n`);
-            if (!summaryExists) {
-                // 追加新摘要
-                summaryEntry.content += `\n> ${pageId}\n${abstract}\n`;
-                console.info(`[OEOS] 添加摘要: ${pageId}`);
+        // 处理没有对应页面的摘要
+        const worldInfoAfterPages = await loadWi(worldInfoName);
+        if (worldInfoAfterPages && worldInfoAfterPages.entries) {
+            let summaryEntry = null;
+            for (const entry of Object.values(worldInfoAfterPages.entries)) {
+                if (entry.comment === 'summary') {
+                    summaryEntry = entry;
+                    break;
+                }
+            }
+
+            if (summaryEntry) {
+                for (const { pageId, abstract } of summaries) {
+                    // 检查是否已经在 updatePageEntry 中添加过
+                    const summaryRegex = new RegExp(`^${pageId}\\s*:`, 'm');
+                    if (!summaryRegex.test(summaryEntry.content)) {
+                        summaryEntry.content += `${pageId}: ${abstract};\n`;
+                        console.info(`[OEOS] 添加独立摘要: ${pageId}`);
+                    }
+                }
+                await saveWi(worldInfoName, worldInfoAfterPages);
             }
         }
-
-        // 保存更新后的 World Info
-        await saveWi(worldInfoName, worldInfo);
 
         console.info(`[OEOS] 已从聊天记录初始化 ${pages.length} 个页面和 ${summaries.length} 个摘要`);
     } catch (error) {
@@ -350,15 +404,25 @@ export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
                 if (summaryEntry) {
                     // 追加新摘要（去重）
                     for (const { pageId, abstract } of summaries) {
-                        const summaryExists = summaryEntry.content.includes(`> ${pageId}\n`);
-                        if (!summaryExists) {
-                            summaryEntry.content += `\n> ${pageId}\n${abstract}\n`;
+                        // 检查摘要是否已存在（格式：pageId: 摘要文本;）
+                        const summaryRegex = new RegExp(`^${pageId}\\s*:`, 'm');
+                        if (!summaryRegex.test(summaryEntry.content)) {
+                            // 追加新摘要（格式：pageId: 摘要文本;）
+                            summaryEntry.content += `${pageId}: ${abstract};\n`;
                             console.info(`[OEOS] 添加摘要: ${pageId}`);
                         }
                     }
 
                     // 保存更新
                     await saveWi(worldInfoName, worldInfo);
+
+                    // 同步 summary 到预设文件
+                    await updatePresetPromptContent(
+                        '小猫之神-oeos',
+                        'cd7528e9-3f8a-4f89-9605-9925a9ec2c76',
+                        'summary',
+                        summaryEntry.content
+                    );
                 }
             }
         }
