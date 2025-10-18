@@ -2,7 +2,7 @@
 
 import { updateStateEntry, updatePageEntry } from './game-state.js';
 import { recalculateDynamicContext } from './context-engine.js';
-import { loadWi, saveWi, listenToAiResponse } from './st-api.js';
+import { loadWi, saveWi, listenToAiResponse, loadPreset, savePreset } from './st-api.js';
 import {
     enableChatHistory,
     disableChatHistory,
@@ -35,17 +35,17 @@ import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebo
         };
 
         // 1) 首次加载某个聊天
-        eventSource.on('chatLoaded', async (event) => {
-            await applyToggle(event?.detail?.id);
-        });
+        // eventSource.on('chatLoaded', async (event) => {
+        //     await applyToggle(event?.detail?.id);
+        // });
         // 2) 聊天切换（包括启动完成后的自动触发）
         eventSource.on(event_types.CHAT_CHANGED, async () => {
             await applyToggle(this_chid);
         });
-        // 3) 应用就绪后兜底检查一次，避免上次 OEOS 关闭状态遗留
-        eventSource.on(event_types.APP_READY, async () => {
-            await applyToggle(this_chid);
-        });
+        // // 3) 应用就绪后兜底检查一次，避免上次 OEOS 关闭状态遗留
+        // eventSource.on(event_types.APP_READY, async () => {
+        //     await applyToggle(this_chid);
+        // });
         // 4) 立即兜底一次（注册监听后可能错过早期事件）
         setTimeout(() => { applyToggle(this_chid); }, 0);
     } catch (err) {
@@ -53,11 +53,6 @@ import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebo
     }
 })();
 
-/**
- * 注意：不再使用全局的 World Info 文件
- * 每个角色有自己的 World Info 文件（如 test1-OEOS.json）
- * 该文件包含多个条目（entries）
- */
 
 
 /**
@@ -76,7 +71,7 @@ async function getPage(pageId) {
 
         const worldInfoName = char.data?.extensions?.world;
         if (!worldInfoName) {
-            // console.warn('[OEOS] 角色没有绑定 World Info');
+             console.warn('[OEOS] 角色没有绑定 World Info');
             return null;
         }
 
@@ -87,21 +82,21 @@ async function getPage(pageId) {
             return null;
         }
 
-        // 查找 OEOS-Pages 条目
+        // 查找 Pages 条目
         let pagesEntry = null;
         for (const entry of Object.values(worldInfo.entries)) {
-            if (entry.comment === 'OEOS-Pages') {
+            if (entry.comment === 'Pages') {
                 pagesEntry = entry;
                 break;
             }
         }
 
         if (!pagesEntry || !pagesEntry.content) {
-            console.warn('[OEOS] OEOS-Pages 条目不存在或为空');
+            console.warn('[OEOS] Pages 条目不存在或为空');
             return null;
         }
 
-        // 从 OEOS-Pages 内容中提取指定页面
+        // 从 Pages 内容中提取指定页面
         // 格式：纯 OEOScript v4 代码，用 "> pageId" 分隔
         // 示例：
         // > start
@@ -167,21 +162,21 @@ async function updateState(newState) {
 }
 
 /**
- * 从聊天记录中提取所有 <OEOS-Pages> 标签
- * 注意：<OEOS-Pages> 标签无 id 属性，一个标签内可能包含多个页面
+ * 从聊天记录中提取所有 <Pages> 标签
+ * 注意：<Pages> 标签无 id 属性，一个标签内可能包含多个页面
  * @param {Array} chatArray - SillyTavern 的 chat 数组
  * @returns {Array} - 提取的页面数组 [{ pageId, content }, ...]
  */
 function extractPagesFromChat(chatArray) {
     const pages = [];
-    // 修正：<OEOS-Pages> 标签无 id 属性
-    const pageBlockRegex = /<OEOS-Pages>([\s\S]*?)<\/OEOS-Pages>/gi;
+    // <Pages> 标签无 id 属性
+    const pageBlockRegex = /<Pages>([\s\S]*?)<\/Pages>/gi;
 
     for (const message of chatArray) {
         if (!message.mes) continue;
 
         let blockMatch;
-        // 提取每个 <OEOS-Pages>...</OEOS-Pages> 块
+        // 提取每个 <Pages>...</Pages> 块
         while ((blockMatch = pageBlockRegex.exec(message.mes)) !== null) {
             const blockContent = blockMatch[1].trim();
 
@@ -192,7 +187,7 @@ function extractPagesFromChat(chatArray) {
             let pageMatch;
 
             while ((pageMatch = pageRegex.exec(blockContent)) !== null) {
-                const pageId = pageMatch[1];
+                const pageId = pageMatch[1].trim();
                 const content = pageMatch[2].trim();
                 pages.push({ pageId, content });
             }
@@ -204,37 +199,40 @@ function extractPagesFromChat(chatArray) {
 }
 
 /**
- * 从聊天记录中提取所有 <OEOS-Abstracts> 标签
+ * 从聊天记录中提取所有 <summary> 标签
  * @param {Array} chatArray - SillyTavern 的 chat 数组
  * @returns {Array} - 提取的摘要数组 [{ pageId, abstract }, ...]
  */
-function extractAbstractsFromChat(chatArray) {
-    const abstracts = [];
-    const abstractRegex = /<OEOS-Abstracts>([\s\S]*?)<\/OEOS-Abstracts>/gi;
-    const abstractLineRegex = /([^:]+):\s*([^;]+);/g;
+function extractSummaryFromChat(chatArray) {
+    const summaries = [];
+    const summaryBlockRegex = /<summary>([\s\S]*?)<\/summary>/gi;
 
     for (const message of chatArray) {
         if (!message.mes) continue;
 
-        let match;
-        while ((match = abstractRegex.exec(message.mes)) !== null) {
-            const abstractBlock = match[1];
+        let blockMatch;
+        while ((blockMatch = summaryBlockRegex.exec(message.mes)) !== null) {
+            const blockContent = blockMatch[1].trim();
 
-            let lineMatch;
-            while ((lineMatch = abstractLineRegex.exec(abstractBlock)) !== null) {
-                const pageId = lineMatch[1].trim();
-                const abstract = lineMatch[2].trim();
-                abstracts.push({ pageId, abstract });
+            // 从块内容中提取各个摘要（用 "> pageId" 分隔）
+            const summaryRegex = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
+            let summaryMatch;
+
+            while ((summaryMatch = summaryRegex.exec(blockContent)) !== null) {
+                const pageId = summaryMatch[1].trim();
+                const abstract = summaryMatch[2].trim();
+                summaries.push({ pageId, abstract });
             }
         }
     }
 
-    console.info(`[OEOS] 从聊天记录中提取了 ${abstracts.length} 个摘要`);
-    return abstracts;
+    console.info(`[OEOS] 从聊天记录中提取了 ${summaries.length} 个摘要`);
+    return summaries;
 }
 
 /**
- * 进入游戏时遍历聊天记录初始化游戏数据
+ * 进入游戏时从聊天记录初始化游戏数据
+ * 提取 AI 输出的 <Pages> 和 <summary> 标签内容
  * @param {string} worldInfoName - 角色专属的 World Info 名称
  */
 export async function initializeGameDataFromChat(worldInfoName) {
@@ -247,11 +245,11 @@ export async function initializeGameDataFromChat(worldInfoName) {
             return;
         }
 
-        // 提取页面和摘要
+        // 提取 AI 输出的 <Pages> 和 <summary> 标签
         const pages = extractPagesFromChat(chat);
-        const abstracts = extractAbstractsFromChat(chat);
+        const summaries = extractSummaryFromChat(chat);
 
-        if (pages.length === 0 && abstracts.length === 0) {
+        if (pages.length === 0 && summaries.length === 0) {
             console.info('[OEOS] 聊天记录中没有找到 OEOS 数据');
             return;
         }
@@ -259,64 +257,53 @@ export async function initializeGameDataFromChat(worldInfoName) {
         // 加载 World Info
         let worldInfo = await loadWi(worldInfoName);
         if (!worldInfo || !worldInfo.entries) {
-            worldInfo = { entries: {} };
+            console.warn('[OEOS] World Info 文件不存在或格式错误');
+            return;
         }
 
-        // 查找条目
+        // 查找 Pages 和 summary 条目
         let pagesEntry = null;
-        let abstractsEntry = null;
+        let summaryEntry = null;
 
         for (const entry of Object.values(worldInfo.entries)) {
-            if (entry.comment === 'OEOS-Pages') {
+            if (entry.comment === 'Pages') {
                 pagesEntry = entry;
-            } else if (entry.comment === 'OEOS-Abstracts') {
-                abstractsEntry = entry;
+            } else if (entry.comment === 'summary') {
+                summaryEntry = entry;
             }
         }
 
-        if (!pagesEntry || !abstractsEntry) {
-            throw new Error('OEOS 条目不存在，请先绑定角色');
+        if (!pagesEntry || !summaryEntry) {
+            console.warn('[OEOS] 缺少必要的条目');
+            return;
         }
 
-        // 更新 OEOS-Pages
-        // 格式：纯 OEOScript v4 代码，用 "> pageId" 分隔
+        // 更新 Pages 条目（去重）
         for (const { pageId, content } of pages) {
-            // 确保内容以 "> pageId" 开头
-            let pageContent = content.trim();
-            if (!pageContent.startsWith(`> ${pageId}`)) {
-                pageContent = `> ${pageId}\n${pageContent}`;
-            }
-
-            const pageBlock = `${pageContent}\n\n`;
-            const pageRegex = new RegExp(`> ${pageId}\\n[\\s\\S]*?(?=\\n> |$)`, 'i');
-
-            if (pageRegex.test(pagesEntry.content)) {
-                // 页面已存在，跳过
-                continue;
-            } else {
-                // 添加新页面
-                pagesEntry.content += pageBlock;
+            // 检查页面是否已存在
+            const pageExists = pagesEntry.content.includes(`> ${pageId}\n`);
+            if (!pageExists) {
+                // 追加新页面
+                pagesEntry.content += `\n> ${pageId}\n${content}\n`;
+                console.info(`[OEOS] 添加页面: ${pageId}`);
             }
         }
 
-        // 更新 OEOS-Abstracts
-        for (const { pageId, abstract } of abstracts) {
-            const abstractLine = `${pageId}: ${abstract};`;
-            const abstractRegex = new RegExp(`${pageId}:.*?;`, 'g');
-
-            if (abstractRegex.test(abstractsEntry.content)) {
-                // 摘要已存在，跳过
-                continue;
-            } else {
-                // 添加新摘要
-                abstractsEntry.content += `\n${abstractLine}`;
+        // 更新 summary 条目（去重）
+        for (const { pageId, abstract } of summaries) {
+            // 检查摘要是否已存在
+            const summaryExists = summaryEntry.content.includes(`> ${pageId}\n`);
+            if (!summaryExists) {
+                // 追加新摘要
+                summaryEntry.content += `\n> ${pageId}\n${abstract}\n`;
+                console.info(`[OEOS] 添加摘要: ${pageId}`);
             }
         }
 
         // 保存更新后的 World Info
         await saveWi(worldInfoName, worldInfo);
 
-        console.info(`[OEOS] 已从聊天记录初始化 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
+        console.info(`[OEOS] 已从聊天记录初始化 ${pages.length} 个页面和 ${summaries.length} 个摘要`);
     } catch (error) {
         console.error('[OEOS] 从聊天记录初始化游戏数据失败:', error);
         console.error(`[OEOS] 初始化失败: ${error.message}`);
@@ -325,26 +312,55 @@ export async function initializeGameDataFromChat(worldInfoName) {
 
 /**
  * AI 回复后更新游戏数据
+ * 提取 AI 输出的 <Pages> 和 <summary> 标签，更新到世界树
  * @param {string} worldInfoName - 角色专属的 World Info 名称
  * @param {string} aiMessage - AI 的回复消息
  */
 export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
     try {
-        // 提取页面
+        // 提取 AI 输出的 <Pages> 和 <summary> 标签
         const pages = extractPagesFromChat([{ mes: aiMessage }]);
-        const abstracts = extractAbstractsFromChat([{ mes: aiMessage }]);
+        const summaries = extractSummaryFromChat([{ mes: aiMessage }]);
 
-        if (pages.length === 0 && abstracts.length === 0) {
+        if (pages.length === 0 && summaries.length === 0) {
             // 没有 OEOS 数据，跳过
             return;
         }
 
-        console.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${abstracts.length} 个摘要`);
+        console.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${summaries.length} 个摘要`);
 
         // 更新每个页面
         for (const { pageId, content } of pages) {
-            const abstract = abstracts.find(a => a.pageId === pageId)?.abstract || '';
-            await updatePageEntry(worldInfoName, pageId, content, abstract);
+            await updatePageEntry(worldInfoName, pageId, content);
+        }
+
+        // 更新摘要（追加到 summary 条目）
+        if (summaries.length > 0) {
+            const worldInfo = await loadWi(worldInfoName);
+            if (worldInfo && worldInfo.entries) {
+                // 查找 summary 条目
+                let summaryEntry = null;
+                for (const entry of Object.values(worldInfo.entries)) {
+                    if (entry.comment === 'summary') {
+                        summaryEntry = entry;
+                        break;
+                    }
+                }
+
+                if (summaryEntry) {
+                    // 追加新摘要（去重）
+                    for (const { pageId, abstract } of summaries) {
+                        const summaryExists = summaryEntry.content.includes(`> ${pageId}\n`);
+                        if (!summaryExists) {
+                            summaryEntry.content += `\n> ${pageId}\n${abstract}\n`;
+                            console.info(`[OEOS] 添加摘要: ${pageId}`);
+                        }
+                    }
+
+                    // 保存更新
+                    await saveWi(worldInfoName, worldInfo);
+                }
+            }
         }
 
         // 重新计算动态上下文
@@ -448,87 +464,8 @@ export function getCharacterRegexScripts(charIndex) {
     return char?.data?.extensions?.regex_scripts || [];
 }
 
-/**
- * 为角色添加 OEOS 正则表达式规则
- * @param {number} charIndex 角色索引
- * @returns {Promise<void>}
- */
-async function addOEOSRegexToCharacter(charIndex) {
-    try {
-        const char = characters[charIndex];
-        if (!char) {
-            throw new Error('角色不存在');
-        }
-
-        // 初始化 regex_scripts 数组
-        if (!char.data) char.data = {};
-        if (!char.data.extensions) char.data.extensions = {};
-        if (!char.data.extensions.regex_scripts) {
-            char.data.extensions.regex_scripts = [];
-        }
-
-        // 检查是否已存在 OEOS 正则表达式
-        const existingRegex = char.data.extensions.regex_scripts.find(
-            script => script.scriptName === 'OEOS-Filter'
-        );
-
-        if (existingRegex) {
-            console.info('[OEOS] OEOS 正则表达式已存在');
-            return;
-        }
-
-        // 添加 OEOS 正则表达式规则
-        // 目的：提取 <OEOS-Abstracts> 标签并替换消息显示
-        const oeosRegex = {
-            id: `oeos-${Date.now()}`,
-            scriptName: 'OEOS-Filter',
-            // 匹配整个消息，捕获 <OEOS-Abstracts> 之前、之中、之后的内容
-            findRegex: '/([\\s\\S]*)<OEOS-Abstracts>([\\s\\S]*?)<\\/OEOS-Abstracts>([\\s\\S]*)/gs',
-            // 替换为：Abstracts 内容
-            // 这样可以移除 <OEOS-Abstracts> 标签，但保留其内容
-            replaceString: '$2',
-            trimStrings: [],
-            placement: [2],  // AI_OUTPUT
-            disabled: false,
-            // 重要：两个都设为 true，这样 JSONL 保存完整原始数据，但显示和发送给 AI 的都是过滤后的摘要
-            markdownOnly: true,  // 影响显示
-            promptOnly: true,    // 影响发送给 AI 的 prompt
-            runOnEdit: true,
-            substituteRegex: 0,
-            minDepth: null,
-            maxDepth: null
-        };
-
-        char.data.extensions.regex_scripts.push(oeosRegex);
-
-        // 保存角色数据到服务器
-        const saveDataRequest = {
-            avatar: char.avatar,
-            data: {
-                extensions: {
-                    regex_scripts: char.data.extensions.regex_scripts,
-                },
-            },
-        };
-
-        const response = await fetch('/api/characters/merge-attributes', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            body: JSON.stringify(saveDataRequest),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to save character regex scripts');
-        }
-
-        console.info('[OEOS] 已为角色添加 OEOS 正则表达式');
-        console.info('[OEOS] OEOS 正则表达式已添加:', oeosRegex);
-    } catch (error) {
-        console.error('[OEOS] 添加正则表达式失败:', error);
-        console.error(`[OEOS] 添加正则表达式失败: ${error.message}`);
-        throw error;
-    }
-}
+// 新方案：不再需要正则表达式处理
+// 已移除 addOEOSRegexToCharacter 函数
 
 /**
  * 为角色启用 OEOS 支持
@@ -642,13 +579,12 @@ export async function enableOEOSForCharacter(charIndex) {
             console.info(`[OEOS] 已为角色添加 OEOS 标记`);
         }
 
-        // 3. 为角色添加 OEOS 正则表达式规则
-        await addOEOSRegexToCharacter(charIndex);
+        // 3. 新方案：不再需要正则表达式处理
 
         // 4. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
         //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
-        // console.info(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
+        console.info(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
     } catch (error) {
         console.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
         console.error('[OEOS] Error enabling OEOS for character:', error);
@@ -743,36 +679,37 @@ async function initializeGameDataEntries(worldInfoName) {
     }
 
     // 定义需要创建的游戏数据条目
+    // 新方案：所有节点仅用于数据存储，不激活
     const gameDataEntries = [
         {
-            comment: 'OEOS-Pages',
-            key: ['oeos-pages', 'pages'],
+            comment: 'Pages',
+            key: ['pages'],
             content: '',
-            description: '页面数据库 - 存储该角色游戏的所有 OEOScript 页面'
+            description: '页面数据库 - 存储该角色游戏的所有 OEOScript 页面（仅存储，不激活）'
         },
         {
-            comment: 'OEOS-State',
-            key: ['oeos-state', 'state'],
+            comment: 'State',
+            key: ['state'],
             content: '',
-            description: '游戏状态 - 当前页面、变量、历史路径'
+            description: '游戏状态 - 当前页面、变量、历史路径（仅存储，不激活）'
         },
         {
-            comment: 'OEOS-Graph',
-            key: ['oeos-graph', 'graph'],
+            comment: 'Graph',
+            key: ['graph'],
             content: '',
-            description: '页面关系图 - 页面之间的分支结构'
+            description: '页面关系图 - 页面之间的分支结构（仅存储，不激活）'
         },
         {
-            comment: 'OEOS-Abstracts',
-            key: ['oeos-abstracts', 'abstracts'],
+            comment: 'summary',
+            key: ['summary'],
             content: '',
-            description: '页面摘要 - 用于 Token 优化'
+            description: '页面摘要 - 用于 Token 优化（仅存储，不激活）'
         },
         {
-            comment: 'OEOS-DynamicContext',
-            key: ['oeos-dynamic-context', 'dynamic-context'],
+            comment: 'Dynamic-Context',
+            key: ['dynamic-context'],
             content: '',
-            description: '动态上下文 - 根据游戏状态计算的上下文'
+            description: '动态上下文 - 根据游戏状态计算的上下文（仅存储，不激活）'
         }
     ];
 
@@ -792,15 +729,9 @@ async function initializeGameDataEntries(worldInfoName) {
         if (!exists) {
             const uid = Date.now() + createdCount;
 
-            // 根据条目类型设置不同的激活状态
-            // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 需要永久激活（constant: true）
-            // 其他条目需要禁用（disable: true）
-            const isState = entryDef.comment === 'OEOS-State';
-            const isGraph = entryDef.comment === 'OEOS-Graph';
-            const isAbstracts = entryDef.comment === 'OEOS-Abstracts';
-            const isDynamicContext = entryDef.comment === 'OEOS-DynamicContext';
-            const shouldBeConstant = isState || isGraph || isAbstracts || isDynamicContext;
-            const shouldBeDisabled = !shouldBeConstant;
+            // 新方案：所有节点都不激活，仅用于数据存储
+            // constant: false - 不永久激活
+            // disable: true - 禁用激活
 
             worldInfo.entries[uid] = {
                 uid: uid,
@@ -808,14 +739,14 @@ async function initializeGameDataEntries(worldInfoName) {
                 keysecondary: [],
                 comment: entryDef.comment,
                 content: entryDef.content,
-                constant: shouldBeConstant,  // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 永久激活
+                constant: false,  // 所有节点都不永久激活
                 vectorized: false,
                 selective: false,
                 selectiveLogic: 0,
                 addMemo: false,
                 order: 0,
                 position: 0,
-                disable: shouldBeDisabled,  // OEOS-State、OEOS-Graph、OEOS-Abstracts 和 OEOS-DynamicContext 不禁用，其他条目禁用
+                disable: true,  // 所有节点都禁用
                 excludeRecursion: false,
                 preventRecursion: false,
                 probability: 100,

@@ -53,25 +53,29 @@
 
 ### 待实现的功能
 
-#### 阶段 1：核心数据流（优先级：🔴 最高）✅ **已完成 (2025-10-12)**
+#### 阶段 1：核心数据流（优先级：🔴 最高）✅ **已完成 (2025-10-18)**
 
-**1.1 修正 World Info 条目实现**
-- [x] 修正 OEOS-Pages 的数据格式（移除错误的 `<OEOS-Pages id="xxx">` 包装）
-- [x] 修正 OEOS-Abstracts 的提取和存储逻辑
-- [x] 修正 OEOS-DynamicContext 的计算逻辑
-- [x] 修正 OEOS-State 的变量记录格式
-- [x] 修正 OEOS-Graph 的自动提取逻辑
+**1.1 World Info 条目实现**
+- [x] 实现 Pages 节点（页面数据库，仅存储）
+- [x] 实现 State 节点（游戏状态）
+- [x] 实现 Graph 节点（页面关系图）
+- [x] 实现 summary 节点（页面摘要）
+- [x] 实现 Dynamic-Context 节点（动态上下文）
 
-**1.2 聊天记录提取系统**
-- [x] 实现 `extractPagesFromChat()` - 从 chat 数组提取 `<OEOS-Pages>` 标签
-- [x] 实现 `extractAbstractsFromChat()` - 从 chat 数组提取 `<OEOS-Abstracts>` 标签
+**1.2 XML 标签提取系统**
+- [x] 实现 `extractSummaryFromChat()` - 从 chat 数组提取 `<summary>` 标签
+- [x] 实现 `extractGraphFromChat()` - 从 chat 数组提取 `<Graph>` 标签
+- [x] 实现 `extractStateFromChat()` - 从 chat 数组提取 `<State>` 标签
+- [x] 实现 `extractDynamicContextFromChat()` - 从 chat 数组提取 `<Dynamic-Context>` 标签
 - [x] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
 - [x] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
 
-**1.3 正则表达式配置**
-- [x] 实现 `addOEOSRegexToCharacter()` - 为角色添加 OEOS 正则表达式规则
-- [x] 配置提取 `<OEOS-Abstracts>` 并替换消息显示的正则
-- [ ] 测试正则表达式在 AI 输出中的效果
+**1.3 预设文件同步系统**
+- [x] 实现 `loadPreset()` - 读取预设文件
+- [x] 实现 `savePreset()` - 保存预设文件
+- [x] 实现 `updatePresetPromptContent()` - 更新预设文件中的提示词内容
+- [x] 实现 `updateAllPresetPrompts()` - 批量更新所有提示词
+- [x] 实现双向同步机制（世界树 + 预设文件）
 
 #### 阶段 2：OEOS 引擎修改（优先级：🟠 高）✅ **已完成 (2025-10-12)**
 
@@ -79,10 +83,10 @@
 - [x] 在 Storage mixin 中添加 `getAllVariables()` 方法
 - [x] 在 OpenEosPlayer.vue 中监听页面变化
 - [x] 实现 `onPageChange()` 回调，上报页面 ID 和所有变量
-- [x] 调用 `window.oeosApi.updateState()` 更新 OEOS-State
+- [x] 调用 `window.oeosApi.updateState()` 更新 State 节点
 
 **2.2 页面加载逻辑**
-- [x] 修改 `getPage()` 支持从 OEOS-Pages 读取部分脚本
+- [x] 修改 `getPage()` 支持从 Pages 节点读取部分脚本
 - [x] 修改 OEOSV4Parser 支持解析不完整的脚本
 - [x] 实现页面缺失时的处理逻辑（显示"正在生成..."）
 - [x] 实现 AI 生成完成后的自动刷新
@@ -94,15 +98,15 @@
 **3.1 页面请求系统**
 - [ ] 实现 `requestPageFromAI()` - 模拟用户输入触发 AI 生成
 - [ ] 监听 AI 回复事件（`AI_MESSAGE_RECEIVED`）
-- [ ] 自动提取并更新 OEOS-Pages 和 OEOS-Abstracts
-- [ ] 自动重新计算 OEOS-DynamicContext
+- [ ] 自动提取并更新 Pages 和 summary
+- [ ] 自动重新计算 Dynamic-Context
 
 **3.2 动态上下文引擎**
 - [ ] 完善 `recalculateDynamicContext()` 的计算逻辑
 - [ ] 实现向前 5 个页面的相关 ID 提取
 - [ ] 实现向后 1 个页面的子页面提取
-- [ ] 从 OEOS-Pages 提取相关页面内容
-- [ ] 更新 OEOS-DynamicContext 条目
+- [ ] 从 Pages 提取相关页面内容
+- [ ] 更新 Dynamic-Context 条目
 
 #### 阶段 4：测试与优化（优先级：🟢 低）
 
@@ -124,63 +128,9 @@
 - 📋 可视化编辑器
 - 📋 页面图谱可视化
 
-### 已知问题与修正计划
+### 已知问题与待处理事项
 
-#### 1. **World Info 条目实现错误** ✅ **已修正 (2025-10-12)**
-
-**问题描述**：
-- `OEOS-Pages` 错误地添加了 `<OEOS-Pages id="xxx">` 包装（正确格式：`<OEOS-Pages>` 无 `id` 属性）
-- 存储格式错误：应该存储纯 OEOScript v4 代码，不应包含任何 XML 标签
-- `OEOS-Abstracts` 的提取逻辑未实现
-- `OEOS-DynamicContext` 的计算逻辑不正确（应该向前 5 个页面，向后 1 个页面）
-- `OEOS-State` 缺少变量记录功能（应该记录每个页面的所有变量）
-
-**修正方案**：
-- ✅ 修改 `game-state.js` 中的 `updatePageEntry` 函数
-  - 移除 `<OEOS-Pages id="xxx">` 包装
-  - 存储纯 OEOScript v4 代码，用 `> pageId` 分隔
-- ✅ 修改 `plugin-bridge.js` 中的 `getPage` 函数
-  - 使用正确的正则表达式提取页面（匹配 `> pageId` 而不是 `<OEOS-Pages id="xxx">`）
-- ✅ 修改 `plugin-bridge.js` 中的 `initializeGameDataFromChat` 函数
-  - 正确处理从聊天记录提取的页面内容
-- ✅ 修改 `context-engine.js` 中的 `extractPageSource` 函数
-  - 使用正确的正则表达式提取页面
-- ✅ 实现聊天记录提取系统
-- ✅ 重新实现 `recalculateDynamicContext()`
-
-#### 2. **OEOS 引擎缺少状态上报** ✅ **已修正 (2025-10-12)**
-
-**问题描述**：
-- OEOS 播放器没有在页面跳转时上报状态
-- Storage 对象没有 `getAllVariables()` 方法
-
-**修正方案**：
-- ✅ 在 `Storage.js` 中添加 `getAllVariables()` 方法
-- ✅ 在 `OpenEosPlayer.vue` 中监听页面变化
-- ✅ 调用 `window.oeosApi.updateState()` 上报状态
-
-#### 3. **正则表达式规则未配置** ✅ **已修正 (2025-10-12)**
-
-**问题描述**：
-- 角色没有配置 OEOS 正则表达式规则
-- AI 回复的 `<OEOS-Pages>` 和 `<OEOS-Abstracts>` 标签会污染聊天记录显示
-
-**修正方案**：
-- ✅ 在 `enableOEOSForCharacter()` 中添加正则表达式配置
-- ✅ 配置提取 `<OEOS-Abstracts>` 并替换消息显示
-- ⏳ 测试正则表达式在 AI 输出中的效果
-
-#### 4. **页面加载逻辑不支持部分脚本** ✅ **已修正 (2025-10-12)**
-
-**问题描述**：
-- OEOSV4Parser 期望完整的故事脚本
-- 现在 AI 逐步生成页面，脚本不完整
-
-**修正方案**：
-- ✅ 修改 `getPage()` 使用简单的字符串分割
-- ✅ 实现页面缺失时的占位符页面
-
-#### 5. **未经测试** 🟢
+#### 1. **未经完整测试** 🟢
 
 **问题描述**：
 - 所有代码模块均未进行完整的功能测试
@@ -188,19 +138,19 @@
 
 **测试计划**：
 - 先测试基础功能（角色选择、World Info 读写）
-- 再测试复杂功能（AI 生成、动态上下文）
+- 再测试复杂功能（AI 生成、预设文件同步）
 
-#### 6. **新增问题** 🟡
+#### 2. **待优化事项** 🟡
 
 **问题描述**：
 - AI 回复监听器可能重复注册
-- 正则表达式未经实际测试
 - 占位符页面逻辑较简单
+- 预设文件更新机制需要实际测试
 
 **待处理**：
 - 添加监听器去重逻辑
-- 在实际环境中测试正则表达式
 - 完善占位符页面的处理逻辑
+- 在实际环境中测试预设文件同步
 
 ---
 
@@ -285,12 +235,17 @@ SillyTavern-release/
 SillyTavern-release/data/{user}/worlds/
 └── {角色名}-OEOS.json            # 角色专属：该角色游戏的所有数据
     ├── OEOS Character Marker     # 标记条目（仅用于识别，不激活）
-    ├── OEOS-Pages                # 页面数据库
-    ├── OEOS-State                # 游戏状态
-    ├── OEOS-Graph                # 页面关系图
-    ├── OEOS-Abstracts            # 页面摘要
-    └── OEOS-DynamicContext       # 动态上下文
+    ├── Pages                     # 页面数据库（仅存储）
+    ├── State                     # 游戏状态（仅存储）
+    ├── Graph                     # 页面关系图（仅存储）
+    ├── summary                   # 页面摘要（仅存储）
+    └── Dynamic-Context           # 动态上下文（仅存储）
 ```
+
+**说明**：
+- 所有节点设置为 `constant: false, disable: true`（不激活，仅存储）
+- AI 上下文通过预设文件 `小猫之神-oeos.json` 中的提示词注入
+- 世界树节点仅用于数据存储和用户查看
 
 **示例**：
 - `test1-OEOS.json` - test1 角色的游戏数据
@@ -349,8 +304,7 @@ function loadData() {
 
 #### 1. 数据存储
 - ✅ 每个角色一个游戏 → 所有游戏数据存储在角色专属 World Info（`{角色名}-OEOS.json`）
-- ❌ 不要创建全局 WI 存储游戏数据（如 `WI-OEOS-Pages`、`WI-OEOS-State`）
-- ❌ 不要创建全局 WI 存储角色数据（如 `WI-OEOS-CharacterContext`）
+
 
 #### 2. 通知系统
 - ✅ 使用 `console` 提供用户反馈
@@ -382,20 +336,19 @@ function loadData() {
 
 ## 变更记录
 
-### v3.1 (2025-10-12)
-- **重大修正**：修复 World Info 条目的数据格式错误
-  - 修正 `<OEOS-Pages>` 标签格式说明（无 `id` 属性）
-  - 修正存储格式（纯 OEOScript v4 代码，无 XML 标签）
-  - 更新所有相关函数的实现（`updatePageEntry`, `getPage`, `extractPageSource` 等）
-  - 修复 `require is not defined` 错误（改用 ES6 import）
-  - 移除不必要的 API 可用性检查
+### v4.0 (2025-10-18)
+- **架构升级**：实现预设文件提示词注入方案
+  - 重命名世界树节点（Pages, State, Graph, summary, Dynamic-Context）
+  - 所有节点设置为不激活状态（仅存储）
+  - 实现 XML 标签提取系统（summary, Graph, State, Dynamic-Context）
+  - 实现预设文件同步系统（双向同步：世界树 + 预设文件）
+  - 移除正则表达式处理（不再需要）
+  - 更新所有相关函数和文档
 
 ### v3.0 (2025-10-11)
 - 彻底重构文档，聚焦项目进度
 - 明确标注"探索阶段"，所有功能未经测试
 - 将"已实现功能"改为"已编写的代码模块"
-- 移除"关键代码示例"（未验证正确性）
-- 移除"故障排除"（无实际测试数据）
 - 添加详细的文件结构说明
 - 添加开发规范和测试注意事项
 

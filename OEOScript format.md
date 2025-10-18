@@ -1,6 +1,6 @@
-# OEOScript v4 命令参考文档
+# OEOScript 命令参考文档
 
-本文档旨在详细介绍 OEOScript v4格式的语法、命令和所有可用参数。
+本文档旨在详细介绍 OEOScript 格式的语法、命令和所有可用参数。
 
 ## 目录
 1.  [核心概念](#核心概念)
@@ -19,26 +19,25 @@
     *   [`eval`](#eval---执行代码)
     *   [`storage` 命令](#storage-命令)
     *   [`enable` / `disable`](#enable--disable---页面状态控制)
-    *   [`end`](#end---结束冒险)
     *   [`noop`](#noop---空操作)
 5.  [高级主题](#高级主题)
-    *   [与 `Sound` 对象交互](#与-sound-对象交互)
+    *   [与 `Sound` 对象交互](#与-Sound-对象交互)
     *   [模拟状态栏](#模拟状态栏)
-6.  [元数据块](#元数据块)
+
 
 ---
 ## 核心概念
 
 ### 1. 页面 (Pages)
-*   每个页面块以 `>` 或 `#` 开头，后跟唯一的页面ID。
+*   每个页面块以 `>`  开头，后跟唯一的页面ID。
 *   页面块内的所有后续缩进行都属于该页面。
 
 **示例:**
-```coffeescript
+```
 > start
   say "这是起始页"
 
-# page2
+> page2
   say "这是第二页"
 ```
 
@@ -87,19 +86,17 @@ OEOScript 依赖表达式来实现动态的游戏逻辑。
 *   **`$` 前缀表达式**: 以单个美元符号 `$` 开头的字符串被视为一段完整的 JavaScript 代码。其执行结果将作为参数的最终值。
 *   **`<eval>` 内嵌表达式**: 在字符串内部，可以使用 `<eval>...</eval>` 标签来嵌入并执行 JavaScript 表达式，并将其结果拼接到字符串中。
 
-> **关于 `Storage` 和 `storage`**
->
-> 在表达式中，`Storage` 和 `storage` 是 **完全等效** 的，`Sound` 和 `sound` 也是如此。你可以根据个人偏好选择使用大写或小写形式，但建议在单个项目中保持风格统一。
+
 
 **示例:**
-```coffeescript
+```
 # 使用 $ 前缀
-storage.set key: "gold" value: $Storage.get('gold') - 10
+storage.set key: "gold" value: $storage.get('gold') - 10
 goto $nextPage
 
 # 在字符串中使用 <eval>
 say "你的分数是 <eval>score * 100</eval> 分。"
-say "你好, <eval>Storage.get('playerName')</eval>!"
+say "你好, <eval>storage.get('playerName')</eval>!"
 ```
 
 > **重要：JavaScript 表达式语法限制**
@@ -128,9 +125,9 @@ say "你好, <eval>Storage.get('playerName')</eval>!"
 | `align` | String | 否 | `left` | 文本对齐方式: `left`, `center`, `right`。 |
 
 **示例:**
-```coffeescript
+```
 > page1
-  say "你好, <eval>Storage.get('playerName')</eval>！" mode: "instant"
+  say "你好, <eval>storage.get('playerName')</eval>！" mode: "instant"
   say label: "这是一个<font color='red'>重要</font>消息。"
 ```
 
@@ -145,10 +142,10 @@ say "你好, <eval>Storage.get('playerName')</eval>!"
 | `url` | String | 是 | - | **(首位参数)** 图片的 URL。支持 `$` 表达式。 |
 
 **示例:**
-```coffeescript
+```
 > start
   image "media/bg1.jpg"
-  image url: $Storage.get('currentBackground')
+  image url: $storage.get('currentBackground')
 ```
 
 ### `choice` - 提供选项
@@ -174,25 +171,25 @@ choice
 
 **单行命令快捷方式**
 如果选项被点击后只需要执行一个命令，你可以使用 `->` 符号来简化书写，无需缩进代码块。
-```coffeescript
+```
 choice
   "直接结束" -> end
   "去下一页" -> goto next_page
 ```
 
 **示例:**
-```coffeescript
+```
 > crossroads
   say "你走到了一个十字路口。"
   choice
     "向左走"
       say "你选择了左边的路。"
       goto forest_path
-    "向右走" when: $Storage.get('hasMap') == true color: "blue"
+    "向右走" when: $storage.get('hasMap') == true color: "blue"
       say "你看着地图，选择了右边。"
       goto city_path
     "查看状态" keep: true
-      say "你的生命值是 <eval>Storage.get('hp')</eval>"
+      say "你的生命值是 <eval>storage.get('hp')</eval>"
     "原地等待" -> goto waiting_event
 ```
 
@@ -207,14 +204,14 @@ choice
 | `var` | String | 是 | - | 用户输入的值将被赋给的全局变量名。 |
 | `value` | String | 否 | `""` | 输入框的初始默认值。 |
 
-> **工作机制说明**：`prompt` 命令会创建一个由 `var` 参数指定的 **临时全局变量**（例如 `playerName`）。这个变量仅在当前页面的后续命令执行期间有效。为了长期保存用户输入，你必须紧接着使用 `eval` 或 `storage.set` 命令将其存入 `Storage`，如示例所示。
+> **工作机制说明**：`prompt` 命令会创建一个由 `var` 参数指定的 **临时全局变量**（例如 `playerName`）。这个变量仅在当前页面的后续命令执行期间有效。为了长期保存用户输入，你必须紧接着使用 `eval` 或 `storage.set` 命令将其存入 `storage`，如示例所示。
 
 **示例:**
-```coffeescript
+```
 > ask_name
   say "你叫什么名字？"
   prompt var: "playerName" value: "路人甲"
-  eval code: "Storage.set('playerName', playerName)"
+  eval code: "storage.set('playerName', playerName)"
   say "你好, <eval>playerName</eval>!"
 ```
 
@@ -227,13 +224,13 @@ choice
 | 参数 | 类型 | 必须 | 默认值 | 描述 |
 | :--- | :--- | :--- | :--- | :--- |
 | `url` | String | 是 | - | **(首位参数)** 音频文件的 URL。 |
-| `id` | String | 否 | `__sound_`+URL | 音频的唯一标识符，用于后续控制。 |
+| `id` | String | 否 | `__Sound_`+URL | 音频的唯一标识符，用于后续控制。 |
 | `loops` | Number | 否 | `1` | 循环播放次数。`0` 表示无限循环。 |
 | `volume` | Number | 否 | `1.0` | 音量，范围从 `0` 到 `1`。 |
 | `background`| Boolean | 否 | `false`| 是否作为背景音乐播放。 |
 
 **示例:**
-```coffeescript
+```
 > battle_scene
   audio.play "media/bgm.mp3" id: "bgm" loops: 0 background: true volume: 0.5
 ```
@@ -242,7 +239,7 @@ choice
 在屏幕边缘显示一个短暂或持久的通知。
 
 **语法**:
-```coffeescript
+```
 # 创建/更新通知
 notification.create id: "<id>" label: "<text>" [key: value ...]
   # (可选) 点击按钮时执行的命令
@@ -270,12 +267,12 @@ notification.remove "<id>"
 | `id` | String | 是 | - | **(首位参数)** 要移除的通知的ID。 |
 
 **示例:**
-```coffeescript
+```
 > show_quest
   notification.create id: "quest" label: "新任务：找到钥匙" button: "接受" duration: "10s"
     commands
       say "任务已接受！"
-      eval code: "Storage.set('quest_accepted', true)"
+      eval code: "storage.set('quest_accepted', true)"
     timerCommands
       say "你错过了接受任务的时间。"
 
@@ -287,7 +284,7 @@ notification.remove "<id>"
 创建一个延时、倒计时或周期性事件。
 
 **语法**:
-```coffeescript
+```
 # 同步（阻塞）计时器
 timer duration: <duration> [key: value ...]
 
@@ -317,7 +314,7 @@ timer.remove id: "<id>"
 | `commands` | Block | 否 | `[]` | 计时结束时执行的命令块。**此参数的存在会使计时器变为异步模式。** |
 
 **示例:**
-```coffeescript
+```
 > sync_timer_example
   say "5秒后爆炸..."
   timer duration: "5s" style: "text"
@@ -350,10 +347,10 @@ if <condition>
   <commands>]
 ```
 **示例:**
-```coffeescript
-if $Storage.get('gold') >= 100
+```
+if $storage.get('gold') >= 100
   say "你购买了商品。"
-else if $Storage.get('gold') >= 50
+else if $storage.get('gold') >= 50
   say "你可以买个便宜点的。"
 else
   say "你的金币不够。"
@@ -393,12 +390,12 @@ eval
 > `eval` 和表达式中执行的 JavaScript 代码必须遵循 **ES5 语法**。请**避免**使用 ES6+ 的特性，例如 `let`、`const` 或箭头函数 (`=>`)。请使用 `var` 来声明变量。
 
 **示例:**
-```coffeescript
-eval code: "var newHp = Storage.get('hp') - 10; Storage.set('hp', newHp);"
+```
+eval code: "var newHp = storage.get('hp') - 10; storage.set('hp', newHp);"
 
 eval
-  var currentFavor = Storage.get('favor');
-  Storage.set('favor', currentFavor + 1);
+  var currentFavor = storage.get('favor');
+  storage.set('favor', currentFavor + 1);
 ```
 
 ### `storage` 命令
@@ -426,10 +423,6 @@ disable "<pageId>"
 | :--- | :--- | :--- | :--- | :--- |
 | `pageId` | String | 是 | - | **(首位参数)** 要启用或禁用的目标页面的ID。 |
 
-### `end` - 结束冒险
-立即结束整个冒险或故事。
-
-**语法**: `end`
 
 ### `noop` - 空操作
 一个不执行任何操作的命令，通常用作逻辑占位符。
@@ -450,7 +443,7 @@ disable "<pageId>"
 | `.stop()` | 停止音频并回到起点。 |
 
 **示例：**
-```coffeescript
+```
 > battle_won
   say "战斗胜利！"
   eval code: "Sound.get('bgm').stop()"
@@ -460,14 +453,12 @@ disable "<pageId>"
 通过创建一个**不会自动消失**的 `notification` 来实现。要更新状态栏，只需使用相同的 `id` 再次调用 `notification.create`。
 
 **示例:**
-```coffeescript
----
-init: |
-  var hp = 100;
-  var gold = 50;
----
+```
 > start
   # 首次创建状态栏
+  storage.clear
+  storage.set key: "hp" value:100
+  storage.set key: "gold" value: 50
   notification.create id: "statusBar" label: "❤️ HP: <eval>hp</eval> | 💰 金币: <eval>gold</eval>"
   goto encounter
 
@@ -478,21 +469,3 @@ init: |
   notification.create id: "statusBar" label: "❤️ HP: <eval>hp</eval> | 💰 金币: <eval>gold</eval>"
 ```
 
----
-## 元数据块
-文件顶部可以有一个由 `---` 包围的 YAML 块，用于定义 `init` 脚本或其他元信息（如标题、作者等）。
-
-*   **`init`**: 一个多行字符串，包含在故事开始前执行的 JavaScript 代码，通常用于初始化变量。
-
-**示例:**
-```yaml
----
-title: "我的冒险"
-author: "作者名"
-init: |
-  var gold = 100;
-  var hp = 100;
-  var hasMap = false;
----
-> start
-  say "游戏开始，你有 <eval>gold</eval> 金币。"

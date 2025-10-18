@@ -151,19 +151,19 @@ window.oeosApi = {
 
 每个 OEOS 角色都有自己的 World Info 文件（`{角色名}-OEOS.json`），包含：
 - **OEOS Character Marker** - 标记条目（用于识别 OEOS 角色）
-- **OEOS-Pages** - 页面数据库（存储所有 OEOScript 页面）
-- **OEOS-State** - 游戏状态（玩家路径和变量）
-- **OEOS-Graph** - 页面关系图（页面之间的跳转关系）
-- **OEOS-Abstracts** - 页面摘要（用于 Token 优化，永久激活）
-- **OEOS-DynamicContext** - 动态上下文（根据玩家位置计算，永久激活）
+- **Pages** - 页面数据库（存储所有 OEOScript 页面）
+- **State** - 游戏状态（玩家路径和变量）
+- **Graph** - 页面关系图（页面之间的跳转关系）
+- **summary** - 页面摘要（用于 Token 优化，永久激活）
+- **Dynamic-Context** - 动态上下文（根据玩家位置计算，永久激活）
 
 ### AI 生成流程
 
 1. 玩家选择一个选项（例如："进入森林"）
 2. OEOS 引擎执行 `goto: forest`
-3. 检查 OEOS-Pages 是否有 `forest` 页面
+3. 检查 Pages 是否有 `forest` 页面
 4. 如果没有，显示"正在生成..."并请求 AI 生成
-5. AI 回复包含 `<OEOS-Pages>` 和 `<OEOS-Abstracts>` 标签
+5. AI 回复包含 `<Pages>` 和 `<summary>` 标签
 6. 系统自动提取并更新 World Info
 7. 正则表达式过滤消息显示（只显示摘要）
 8. OEOS 播放器加载新页面
@@ -204,7 +204,7 @@ A: 目前支持 OEOScript v4。详见 `oeos-commands.v4.md`。
 A: 存储在角色专属的 World Info 文件中（`data/{user}/worlds/{角色名}-OEOS.json`）。
 
 **Q: AI 生成的页面如何存储？**
-A: AI 回复中的 `<OEOS-Pages>` 标签内容会被提取并存储到 OEOS-Pages 条目中。
+A: AI 回复中的 `<Pages>` 标签内容会被提取并存储到 Pages 条目中。
 
 ## 🤝 贡献
 

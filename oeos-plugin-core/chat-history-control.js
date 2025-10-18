@@ -147,11 +147,9 @@ export function enableChatHistory(characterId = null) {
         }
         
         console.info('[OEOS] 已启用聊天历史');
-        console.log('[OEOS] chatHistory 已启用');
         return true;
     } catch (error) {
         console.error('[OEOS] 启用 chatHistory 失败:', error);
-        console.error(`[OEOS] 启用失败: ${error.message}`);
         return false;
     }
 }
@@ -186,11 +184,11 @@ export function disableChatHistory(characterId = null) {
         }
         
         console.info('[OEOS] 已禁用聊天历史');
-        console.log('[OEOS] chatHistory 已禁用');
+      
         return true;
     } catch (error) {
         console.error('[OEOS] 禁用 chatHistory 失败:', error);
-        console.error(`[OEOS] 禁用失败: ${error.message}`);
+        
         return false;
     }
 }
@@ -258,7 +256,6 @@ export function enableChatHistorySilent(characterId = null) {
             promptManager.render();
         }
 
-        console.info('[OEOS] 已启用聊天历史');
         console.log('[OEOS] chatHistory 已启用（自动模式）');
         return true;
     } catch (error) {
@@ -297,7 +294,7 @@ export function disableChatHistorySilent(characterId = null) {
             promptManager.render();
         }
 
-        console.info('[OEOS] 已禁用聊天历史');
+    
         console.log('[OEOS] chatHistory 已禁用（自动模式）');
         return true;
     } catch (error) {

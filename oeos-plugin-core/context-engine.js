@@ -1,11 +1,68 @@
 // Contains the core logic for dynamically generating the AI's context based on the current game state.
 
-import { saveWi, loadWi } from './st-api.js';
+import { saveWi, loadWi, getPresetByName, savePresetDirect } from './st-api.js';
+
+/**
+ * 更新预设文件中指定提示词的 XML 标签内容
+ * @param {string} presetName - 预设文件名称
+ * @param {string} promptIdentifier - 提示词的 identifier
+ * @param {string} tagName - XML 标签名称
+ * @param {string} newContent - 新的标签内容
+ * @returns {Promise<boolean>} - 是否更新成功
+ */
+async function updatePresetPromptContent(presetName, promptIdentifier, tagName, newContent) {
+    try {
+        console.info(`[OEOS] 开始同步 <${tagName}> 到预设文件 "${presetName}"`);
+
+        // 获取预设文件的原始对象（可以直接修改）
+        const preset = getPresetByName(presetName);
+        if (!preset) {
+            console.warn(`[OEOS] 预设文件 "${presetName}" 不存在，跳过同步`);
+            return false;
+        }
+
+        if (!preset.prompts || !Array.isArray(preset.prompts)) {
+            console.warn(`[OEOS] 预设文件 "${presetName}" 格式错误：缺少 prompts 数组`);
+            return false;
+        }
+
+        const prompt = preset.prompts.find(p => p.identifier === promptIdentifier);
+        if (!prompt) {
+            console.warn(`[OEOS] 在预设文件中未找到 identifier 为 "${promptIdentifier}" 的提示词`);
+            return false;
+        }
+
+        console.info(`[OEOS] 找到提示词 "${prompt.name}"，当前内容长度: ${prompt.content.length}`);
+        console.info(`[OEOS] 新内容长度: ${newContent.length}`);
+
+        const tagRegex = new RegExp(`(<${tagName}>)[\\s\\S]*?(<\\/${tagName}>)`, 'i');
+        const replacement = `$1\n${newContent}\n$2`;
+
+        if (tagRegex.test(prompt.content)) {
+            const oldContent = prompt.content;
+            prompt.content = prompt.content.replace(tagRegex, replacement);
+            console.info(`[OEOS] 已替换 <${tagName}> 标签内容`);
+            console.info(`[OEOS] 替换前长度: ${oldContent.length}, 替换后长度: ${prompt.content.length}`);
+        } else {
+            console.warn(`[OEOS] 提示词中未找到 <${tagName}> 标签，跳过更新`);
+            console.warn(`[OEOS] 提示词内容: ${prompt.content.substring(0, 200)}...`);
+            return false;
+        }
+
+        // 直接保存预设文件（不克隆，因为我们已经修改了原始对象）
+        await savePresetDirect(presetName, preset);
+        console.info(`[OEOS] 已成功同步 <${tagName}> 到预设文件`);
+        return true;
+    } catch (error) {
+        console.error(`[OEOS] 更新预设文件失败:`, error);
+        return false;
+    }
+}
 
 /**
  * Parses the state string into a list of page IDs.
  * e.g., "start(...) > A(hp:100) > B(...)" -> ['start', 'A', 'B']
- * @param {string} stateString - The state string from WI-OEOS-State.
+ * @param {string} stateString - The state string from WI-State.
  * @returns {string[]} - An array of page IDs in chronological order.
  */
 function parseStatePath(stateString) {
@@ -19,7 +76,7 @@ function parseStatePath(stateString) {
 /**
  * Parses the graph string into a Map for easy lookup.
  * e.g., "S > A1, A2; A1 > B1;" -> Map { 'S' => ['A1', 'A2'], 'A1' => ['B1'] }
- * @param {string} graphString - The graph string from WI-OEOS-Graph.
+ * @param {string} graphString - The graph string from WI-Graph.
  * @returns {Map<string, string[]>} - A map of page IDs to their children.
  */
 function parseGraph(graphString) {
@@ -39,7 +96,7 @@ function parseGraph(graphString) {
 
 /**
  * Extracts the full OEOScript source code for a specific page ID from the main pages content.
- * @param {string} pagesContent - The entire content of the OEOS-Pages entry.
+ * @param {string} pagesContent - The entire content of the Pages entry.
  * @param {string} pageId - The ID of the page to extract.
  * @returns {string|null} - The full source code of the page, or null if not found.
  */
@@ -83,13 +140,13 @@ export async function recalculateDynamicContext(worldInfoName) {
         let dynamicContextEntry = null;
 
         for (const entry of Object.values(worldInfo.entries)) {
-            if (entry.comment === 'OEOS-State') {
+            if (entry.comment === 'State') {
                 stateEntry = entry;
-            } else if (entry.comment === 'OEOS-Graph') {
+            } else if (entry.comment === 'Graph') {
                 graphEntry = entry;
-            } else if (entry.comment === 'OEOS-Pages') {
+            } else if (entry.comment === 'Pages') {
                 pagesEntry = entry;
-            } else if (entry.comment === 'OEOS-DynamicContext') {
+            } else if (entry.comment === 'Dynamic-Context') {
                 dynamicContextEntry = entry;
             }
         }
@@ -132,11 +189,19 @@ export async function recalculateDynamicContext(worldInfoName) {
             }
         }
 
-        // 7. 更新 OEOS-DynamicContext 条目
+        // 7. 更新 Dynamic-Context 条目
         dynamicContextEntry.content = finalContentBlock.trim();
 
         // 8. 保存更新后的 World Info
         await saveWi(worldInfoName, worldInfo);
+
+        // 9. 同步 Dynamic-Context 到预设文件
+        await updatePresetPromptContent(
+            '小猫之神-oeos',
+            '2e971b31-51f2-4e32-8bbf-0248d5641f33',
+            'Dynamic-Context',
+            dynamicContextEntry.content
+        );
 
         console.log(`[OEOS] 动态上下文已重新计算，当前页面: ${currentPageId}`);
         console.info(`[OEOS] 动态上下文已更新（页面: ${currentPageId}）`);
