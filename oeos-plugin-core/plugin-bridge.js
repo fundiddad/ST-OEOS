@@ -118,15 +118,7 @@ async function getPage(pageId) {
         }
 
         // 从 Pages 内容中提取指定页面
-        // 格式：纯 OEOScript v4 代码，用 "> pageId" 分隔
-        // 示例：
-        // > start
-        //   say "欢迎..."
-        // ---
-        // > forest
-        //   say "森林..."
-        // ---
-        // 格式：纯 OEOScript v4 代码，用 "> pageId" 和---分隔
+        // 格式：纯 OEOScript v4 代码，页面以 > 开始，以 --- 结尾
         // 示例：
         // > start
         //   say "欢迎..."

@@ -381,6 +381,7 @@ Vue 组件渲染（say, choice, image 等）
       - goto: forest
     - "访问村庄":
       - goto: village
+---
 ```
 
 **核心命令**:
