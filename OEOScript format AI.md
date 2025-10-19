@@ -6,11 +6,23 @@ This document provides a comprehensive and definitive reference for the OEOScrip
 
 ### **1. Global Syntax Rules**
 
-1.  **File Structure**: A script is a collection of Pages.
-2.  **Page Definition**: Each page begins with `> ` followed by a unique `pageId`.
+1.  **File Structure**: A script is a collection of Pages. Multiple pages can be defined in a single script, separated by `---`.
+2.  **Page Definition**: Each page begins with `>` followed by a unique `pageId` and ends with `---`.
     ```
-    > pageName
-      ...commands...
+    > start
+      say "欢迎来到冒险世界！"
+      choice:
+        - "进入森林":
+          - goto: forest
+        - "访问村庄":
+          - goto: village
+    ---
+    > forest
+      say "你进入了茂密的森林..."
+      choice:
+        - "继续探索":
+          - goto: deep_forest
+    ---
     ```
 3.  **Indentation**:
     *   **Rule**: Use exactly **2 spaces** for each level of indentation.
@@ -249,13 +261,14 @@ A persistent on-screen status bar (for HP, Gold, etc.) is created using a perman
       storage.set key: "gold" value: 50
       notification.create id: "statusBar" label: "❤️ HP: <eval>storage.get('hp')</eval> | 💰 Gold: <eval>storage.get('gold')</eval>"
       goto fight
-    
+    ---
     > take_damage
       # Modify a value
       eval code: "storage.set('hp', storage.get('hp') - 10)"
       # Update the status bar by re-creating it with the same ID
       notification.create id: "statusBar" label: "❤️ HP: <eval>storage.get('hp')</eval> | 💰 Gold: <eval>storage.get('gold')</eval>"
       say "You took 10 damage!"
+    ---
     ```
 ####    **4.3 HTML Support:**
 *   All HTML is sanitized using DOMPurify for security

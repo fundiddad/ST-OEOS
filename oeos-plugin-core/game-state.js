@@ -95,13 +95,14 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
         }
 
         // 修正：直接存储纯 OEOScript v4 代码，不添加任何 XML 标签
-        // 格式：多个页面直接拼接，用 "> pageId" 分隔
+        // 格式：多个页面用 "> pageId" 和 "---" 分隔
         // 示例：
         // > start
         //   say "欢迎..."
-        //
+        // ---
         // > forest
         //   say "森林..."
+        // ---
 
         // 确保内容以 "> pageId" 开头
         let pageContent = content.trim();
@@ -109,11 +110,11 @@ export async function updatePageEntry(worldInfoName, pageId, content, abstract) 
             pageContent = `> ${pageId}\n${pageContent}`;
         }
 
-        // 添加两个换行符作为页面分隔
-        const pageBlock = `${pageContent}\n\n`;
+        // 添加分隔符
+        const pageBlock = `${pageContent}\n---\n`;
 
-        // 检查页面是否已存在（使用 "> pageId" 作为标识）
-        const pageRegex = new RegExp(`> ${pageId}\\n[\\s\\S]*?(?=\\n> |$)`, 'i');
+        // 检查页面是否已存在
+        const pageRegex = new RegExp(`^>\\s*${pageId}\\s*\\r?\\n[\\s\\S]*?(\\n---\\s*\\r?\\n|\\n---\\s*$|$)`, 'im');
         if (pageRegex.test(pagesEntry.content)) {
             // 替换现有页面
             pagesEntry.content = pagesEntry.content.replace(pageRegex, pageBlock.trim());

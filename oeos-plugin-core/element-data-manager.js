@@ -5,8 +5,9 @@ import { loadWi, saveWi, getPresetByName, savePresetDirect } from './st-api.js';
 
 // Helpers: regex extractors reused locally
 const PAGES_BLOCK_RE = /<Pages>([\s\S]*?)<\/Pages>/gi;
+const PAGE_SPLIT_RE = /^>\s*(\w+)\s*\r?\n([\s\S]*?)(?=\n---\n|$)/gm;
 const SUMMARY_BLOCK_RE = /<summary>([\s\S]*?)<\/summary>/gi;
-const PAGE_SPLIT_RE = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
+
 const GOTO_RE = /(?:->)?\s*goto\s+(\w+)/g;
 
 // Preset identifiers mapping
@@ -43,9 +44,19 @@ export class ElementDataManager {
             let block;
             while ((block = PAGES_BLOCK_RE.exec(msg.mes)) !== null) {
                 const blockContent = block[1].trim();
-                let m;
-                while ((m = PAGE_SPLIT_RE.exec(blockContent)) !== null) {
-                    result.push({ pageId: m[1].trim(), content: m[2].trim() });
+                // Split by --- separator first, then parse each page
+                const pages = blockContent.split(/\n---\n/);
+                for (const page of pages) {
+                    const trimmedPage = page.trim();
+                    if (!trimmedPage) continue;
+
+                    const match = trimmedPage.match(/^>\s*(\w+)\s*\r?\n([\s\S]*)$/);
+                    if (match) {
+                        result.push({
+                            pageId: match[1].trim(),
+                            content: match[2].replace(/\s+$/, '')
+                        });
+                    }
                 }
             }
         }
@@ -289,13 +300,18 @@ export class ElementDataManager {
 
     // ----- Internal (serialize/deserialize) -----
     _serializePages() {
-        // Join as "> id\ncontent\n\n"
-        let out = '';
+        // Join pages with "---" separator as specified in the new format
+        const pageContents = [];
         for (const [id, content] of this.pages.entries()) {
-            const header = content.startsWith(`> ${id}`) ? '' : `> ${id}\n`;
-            out += `${header}${content.replace(/^>\s*\w+\s*\r?\n/i, '')}\n\n`;
+            // If content already starts with the page header, use it as-is
+            if (content.startsWith(`> ${id}`)) {
+                pageContents.push(content);
+            } else {
+                // Add header and preserve original content formatting
+                pageContents.push(`> ${id}\n${content}`);
+            }
         }
-        return out.trim() + (out ? '\n' : '');
+        return pageContents.join('\n---\n');
     }
     _serializeGraph() {
         let out = '';
@@ -315,13 +331,23 @@ export class ElementDataManager {
     _deserializePages(text) {
         this.pages.clear();
         const content = String(text || '');
-        // find each page by header
-        const pageHeaderRe = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
-        let m;
-        while ((m = pageHeaderRe.exec(content)) !== null) {
-            const id = m[1].trim();
-            const body = m[2].trim();
-            this.pages.set(id, `> ${id}\n${body}`);
+        const pages = content.split(/\n---\n/);
+        const pageHeaderRe = /^>\s*(\w+)\s*\r?\n([\s\S]*)$/;
+
+        for (const page of pages) {
+            const trimmedPage = page.trim();
+            if (!trimmedPage) continue;
+
+            const match = trimmedPage.match(pageHeaderRe);
+            if (match) {
+                const id = match[1].trim();
+                const body = match[2].replace(/\s+$/, '');
+                this.pages.set(id, `> ${id}\n${body}`);
+            } else {
+                // Fallback for pages without a header, though this is not expected in the new format
+                // This could be useful for migrating old data. For now, we'll log it.
+                console.warn('[OEOS] Page content found without a valid header:', trimmedPage);
+            }
         }
     }
 

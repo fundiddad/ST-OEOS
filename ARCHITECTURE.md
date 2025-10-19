@@ -119,7 +119,7 @@ World Info 条目通过以下方式激活：
   **2. Pages** - 页面数据库
   - **用途**：存储该角色游戏的所有 OEOScript 页面
   - **激活状态**：`constant: false, disable: true`（不激活，仅存储）
-  - **数据格式**：纯 OEOScript v4 代码（无 XML 标签），多个页面直接拼接
+  - **数据格式**：纯 OEOScript v4 代码（无 XML 标签），页面以>开始以---结尾
   - **存储示例**：
     ```
     > start
@@ -129,12 +129,13 @@ World Info 条目通过以下方式激活：
           - goto: forest
         - "访问村庄":
           - goto: village
-
+    ---
     > forest
       say "你进入了茂密的森林..."
       choice:
         - "继续探索":
           - goto: deep_forest
+    ---
     ```
 
   **3. State** - 玩家状态和路径

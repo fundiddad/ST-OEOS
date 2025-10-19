@@ -154,8 +154,8 @@ window.oeosApi = {
 - **Pages** - 页面数据库（存储所有 OEOScript 页面）
 - **State** - 游戏状态（玩家路径和变量）
 - **Graph** - 页面关系图（页面之间的跳转关系）
-- **summary** - 页面摘要（用于 Token 优化，永久激活）
-- **Dynamic-Context** - 动态上下文（根据玩家位置计算，永久激活）
+- **summary** - 页面摘要（用于 Token 优化）
+- **Dynamic-Context** - 动态上下文（根据玩家位置计算）
 
 ### AI 生成流程
 

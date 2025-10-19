@@ -122,12 +122,21 @@ async function getPage(pageId) {
         // 示例：
         // > start
         //   say "欢迎..."
-        //
+        // ---
         // > forest
         //   say "森林..."
+        // ---
+        // 格式：纯 OEOScript v4 代码，用 "> pageId" 和---分隔
+        // 示例：
+        // > start
+        //   say "欢迎..."
+        // ---
+        // > forest
+        //   say "森林..."
+        // ---
 
-        // 使用正则提取从 "> pageId" 到下一个 "> " 或文件末尾的内容
-        const regex = new RegExp(`> ${pageId}\\n([\\s\\S]*?)(?=\\n> |$)`, 'i');
+        // 使用正则提取从 "> pageId" 到下一个 "---" 或文件末尾的内容
+        const regex = new RegExp(`^>\\s*${pageId}\\s*\\r?\\n([\\s\\S]*?)(?=\\n---\\s*\\r?\\n|\\n---\\s*$|$)`, 'im');
         const match = pagesEntry.content.match(regex);
 
         if (match) {
