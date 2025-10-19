@@ -1,7 +1,7 @@
 // 使用 ES6 模块导出，不使用 window 对象
 
 import { updatePageEntry } from './game-state.js';
-import { recalculateDynamicContext } from './context-engine.js';
+
 import { loadWi, saveWi, listenToAiResponse, getPresetByName, savePresetDirect } from './st-api.js';
 import {
     enableChatHistory,
