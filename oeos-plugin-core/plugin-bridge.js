@@ -1,8 +1,8 @@
 // 使用 ES6 模块导出，不使用 window 对象
 
-import { updateStateEntry, updatePageEntry } from './game-state.js';
+import { updatePageEntry } from './game-state.js';
 import { recalculateDynamicContext } from './context-engine.js';
-import { loadWi, saveWi, listenToAiResponse, loadPreset, savePreset, getPresetByName, savePresetDirect } from './st-api.js';
+import { loadWi, saveWi, listenToAiResponse, getPresetByName, savePresetDirect } from './st-api.js';
 import {
     enableChatHistory,
     disableChatHistory,
@@ -14,8 +14,25 @@ import {
     disableChatHistorySilent
 } from './chat-history-control.js';
 
+import {
+    OEOS_PRESET_NAME,
+    getActivePresetName,
+    switchPresetTo,
+    saveLastPreset,
+    restoreLastPreset
+} from './preset-switcher.js';
+import { ElementDataManager } from './element-data-manager.js';
+
+// Manager registry by worldInfoName
+const _oeosManagers = new Map();
+function getManager(worldInfoName) {
+    if (!_oeosManagers.has(worldInfoName)) {
+        _oeosManagers.set(worldInfoName, new ElementDataManager(worldInfoName));
+    }
+    return _oeosManagers.get(worldInfoName);
+}
 // 导入 SillyTavern 核心模块
-import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebounced, getRequestHeaders, selectCharacterById } from '../../../../script.js';
+import { characters, this_chid, chat, eventSource, event_types, getRequestHeaders, selectCharacterById } from '../../../../script.js';
 
 
 
@@ -28,24 +45,28 @@ import { characters, this_chid, chat, eventSource, event_types, saveSettingsDebo
             const selectedId = Number(idLike ?? this_chid);
             const isOEOS = await isOEOSCharacter(selectedId);
             if (isOEOS) {
+                // Remember current preset and switch to OEOS preset
+                const currentPreset = getActivePresetName();
+                if (currentPreset && currentPreset !== OEOS_PRESET_NAME) {
+                    saveLastPreset(selectedId, currentPreset);
+                }
+                if (currentPreset !== OEOS_PRESET_NAME) {
+                    await switchPresetTo(OEOS_PRESET_NAME);
+                }
+                // Disable chat history silently for OEOS
                 disableChatHistorySilent();
             } else {
+                // Restore last preset for this character if any
+                await restoreLastPreset(selectedId);
+                // Enable chat history back for non-OEOS
                 enableChatHistorySilent();
             }
         };
 
-        // 1) 首次加载某个聊天
-        // eventSource.on('chatLoaded', async (event) => {
-        //     await applyToggle(event?.detail?.id);
-        // });
         // 2) 聊天切换（包括启动完成后的自动触发）
         eventSource.on(event_types.CHAT_CHANGED, async () => {
             await applyToggle(this_chid);
         });
-        // // 3) 应用就绪后兜底检查一次，避免上次 OEOS 关闭状态遗留
-        // eventSource.on(event_types.APP_READY, async () => {
-        //     await applyToggle(this_chid);
-        // });
         // 4) 立即兜底一次（注册监听后可能错过早期事件）
         setTimeout(() => { applyToggle(this_chid); }, 0);
     } catch (err) {
@@ -139,22 +160,17 @@ function createPlaceholderPage(pageId) {
  */
 async function updateState(newState) {
     try {
-        // 获取当前角色的 World Info 名称
         const char = getCurrentCharacter();
-        if (!char) {
-            throw new Error('没有选中的角色');
-        }
-
+        if (!char) throw new Error('没有选中的角色');
         const worldInfoName = char.data?.extensions?.world;
-        if (!worldInfoName) {
-            throw new Error('角色没有绑定 World Info');
-        }
+        if (!worldInfoName) throw new Error('角色没有绑定 World Info');
 
-        // 更新状态条目
-        await updateStateEntry(worldInfoName, newState);
-
-        // 重新计算动态上下文
-        await recalculateDynamicContext(worldInfoName);
+        const mgr = getManager(worldInfoName);
+        // ensure baseline loaded from WI before updating
+        await mgr.loadFromWiAndChat([]);
+        mgr.updateState(newState.pageId, newState.variables || {});
+        // debounce sync
+        mgr.scheduleSync(() => mgr.syncAll());
     } catch (error) {
         console.error('[OEOS] 更新状态失败:', error);
         console.error(`[OEOS] 更新状态失败: ${error.message}`);
@@ -215,81 +231,6 @@ async function updatePresetPromptContent(presetName, promptIdentifier, tagName, 
     }
 }
 
-/**
- * 从聊天记录中提取所有 <Pages> 标签
- * 注意：<Pages> 标签无 id 属性，一个标签内可能包含多个页面
- * @param {Array} chatArray - SillyTavern 的 chat 数组
- * @returns {Array} - 提取的页面数组 [{ pageId, content }, ...]
- */
-function extractPagesFromChat(chatArray) {
-    const pages = [];
-    // <Pages> 标签无 id 属性
-    const pageBlockRegex = /<Pages>([\s\S]*?)<\/Pages>/gi;
-
-    for (const message of chatArray) {
-        if (!message.mes) continue;
-
-        let blockMatch;
-        // 提取每个 <Pages>...</Pages> 块
-        while ((blockMatch = pageBlockRegex.exec(message.mes)) !== null) {
-            const blockContent = blockMatch[1].trim();
-
-            // 从块内容中提取各个页面（用 "> pageId" 分隔）
-            // 兼容：CRLF 换行以及块末尾无换行的情况
-            // 说明：结尾采用 (?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$) 以便匹配到最后一个页面
-            const pageRegex = />\s*(\w+)\s*\r?\n([\s\S]*?)(?=(?:\r?\n>\s*\w+\s*\r?\n)|\s*$)/g;
-            let pageMatch;
-
-            while ((pageMatch = pageRegex.exec(blockContent)) !== null) {
-                const pageId = pageMatch[1].trim();
-                const content = pageMatch[2].trim();
-                pages.push({ pageId, content });
-            }
-        }
-    }
-
-    console.info(`[OEOS] 从聊天记录中提取了 ${pages.length} 个页面`);
-    return pages;
-}
-
-/**
- * 从聊天记录中提取所有 <summary> 标签
- * @param {Array} chatArray - SillyTavern 的 chat 数组
- * @returns {Array} - 提取的摘要数组 [{ pageId, abstract }, ...]
- */
-function extractSummaryFromChat(chatArray) {
-    const summaries = [];
-    const summaryBlockRegex = /<summary>([\s\S]*?)<\/summary>/gi;
-
-    for (const message of chatArray) {
-        if (!message.mes) continue;
-
-        let blockMatch;
-        while ((blockMatch = summaryBlockRegex.exec(message.mes)) !== null) {
-            const blockContent = blockMatch[1].trim();
-
-            // 从块内容中提取各个摘要
-            // 格式：pageId: 摘要文本; 或 pageId: 摘要文本（每行一个）
-            const lines = blockContent.split(/\r?\n/);
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) continue;
-
-                // 匹配格式：pageId: 摘要文本 或 pageId: 摘要文本;
-                const match = trimmedLine.match(/^(\w+)\s*:\s*(.+?)(?:;)?$/);
-                if (match) {
-                    const pageId = match[1].trim();
-                    const abstract = match[2].trim();
-                    summaries.push({ pageId, abstract });
-                }
-            }
-        }
-    }
-
-    console.info(`[OEOS] 从聊天记录中提取了 ${summaries.length} 个摘要`);
-    return summaries;
-}
 
 /**
  * 进入游戏时从聊天记录初始化游戏数据
@@ -364,78 +305,6 @@ export async function initializeGameDataFromChat(worldInfoName) {
     }
 }
 
-/**
- * AI 回复后更新游戏数据
- * 提取 AI 输出的 <Pages> 和 <summary> 标签，更新到世界树
- * @param {string} worldInfoName - 角色专属的 World Info 名称
- * @param {string} aiMessage - AI 的回复消息
- */
-export async function updateGameDataFromAIResponse(worldInfoName, aiMessage) {
-    try {
-        // 提取 AI 输出的 <Pages> 和 <summary> 标签
-        const pages = extractPagesFromChat([{ mes: aiMessage }]);
-        const summaries = extractSummaryFromChat([{ mes: aiMessage }]);
-
-        if (pages.length === 0 && summaries.length === 0) {
-            // 没有 OEOS 数据，跳过
-            return;
-        }
-
-        console.info(`[OEOS] AI 回复中包含 ${pages.length} 个页面和 ${summaries.length} 个摘要`);
-
-        // 更新每个页面
-        for (const { pageId, content } of pages) {
-            await updatePageEntry(worldInfoName, pageId, content);
-        }
-
-        // 更新摘要（追加到 summary 条目）
-        if (summaries.length > 0) {
-            const worldInfo = await loadWi(worldInfoName);
-            if (worldInfo && worldInfo.entries) {
-                // 查找 summary 条目
-                let summaryEntry = null;
-                for (const entry of Object.values(worldInfo.entries)) {
-                    if (entry.comment === 'summary') {
-                        summaryEntry = entry;
-                        break;
-                    }
-                }
-
-                if (summaryEntry) {
-                    // 追加新摘要（去重）
-                    for (const { pageId, abstract } of summaries) {
-                        // 检查摘要是否已存在（格式：pageId: 摘要文本;）
-                        const summaryRegex = new RegExp(`^${pageId}\\s*:`, 'm');
-                        if (!summaryRegex.test(summaryEntry.content)) {
-                            // 追加新摘要（格式：pageId: 摘要文本;）
-                            summaryEntry.content += `${pageId}: ${abstract};\n`;
-                            console.info(`[OEOS] 添加摘要: ${pageId}`);
-                        }
-                    }
-
-                    // 保存更新
-                    await saveWi(worldInfoName, worldInfo);
-
-                    // 同步 summary 到预设文件
-                    await updatePresetPromptContent(
-                        '小猫之神-oeos',
-                        'cd7528e9-3f8a-4f89-9605-9925a9ec2c76',
-                        'summary',
-                        summaryEntry.content
-                    );
-                }
-            }
-        }
-
-        // 重新计算动态上下文
-        await recalculateDynamicContext(worldInfoName);
-
-        console.info(`[OEOS] 已更新 ${pages.length} 个页面`);
-    } catch (error) {
-        console.error('[OEOS] 更新游戏数据失败:', error);
-        console.error(`[OEOS] 更新失败: ${error.message}`);
-    }
-}
 
 /**
  * 检查角色是否为 OEOS 支持角色
@@ -648,6 +517,19 @@ export async function enableOEOSForCharacter(charIndex) {
         // 4. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
         //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
+        // 5. 启用 OEOS 当下，尝试切换到 OEOS 专用预设（记住当前预设，避免丢失）
+        try {
+            const currentPreset = getActivePresetName();
+            if (currentPreset && currentPreset !== OEOS_PRESET_NAME) {
+                saveLastPreset(charIndex, currentPreset);
+            }
+            if (currentPreset !== OEOS_PRESET_NAME) {
+                await switchPresetTo(OEOS_PRESET_NAME);
+            }
+        } catch (e) {
+            console.warn('[OEOS] 切换到 OEOS 预设失败（启用时）:', e);
+        }
+
         console.info(`[OEOS] 角色 ${char.name} 已启用 OEOS 支持`);
     } catch (error) {
         console.error(`[OEOS] 启用 OEOS 失败: ${error.message}`);
@@ -686,8 +568,8 @@ export async function bindCharacter(charIndex) {
         // 1. 初始化游戏数据条目（Pages、State、Graph、Abstracts、DynamicContext）
         await initializeGameDataEntries(worldInfoName);
 
-        // 2. 从聊天记录初始化游戏数据
-        await initializeGameDataFromChat(worldInfoName);
+        // 2. 从聊天记录初始化游戏数据（V2）
+        await initializeGameDataFromChatV2(worldInfoName);
 
         // 3. 激活角色的 World Info
         await activateCharacterWorldInfo(worldInfoName);
@@ -695,7 +577,7 @@ export async function bindCharacter(charIndex) {
         // 4. 激活角色的正则表达式
         activateCharacterRegex(charIndex);
 
-        // 5. 监听 AI 回复事件
+        // 5. 监听 AI 回复事件（V2）
         setupAIResponseListener(worldInfoName);
 
         // 6. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
@@ -715,19 +597,14 @@ export async function bindCharacter(charIndex) {
 function setupAIResponseListener(worldInfoName) {
     listenToAiResponse(async () => {
         try {
-            // 获取最新的 AI 消息
             if (!chat || chat.length === 0) return;
-
             const lastMessage = chat[chat.length - 1];
             if (!lastMessage || !lastMessage.mes || lastMessage.is_user) return;
-
-            // 更新游戏数据
-            await updateGameDataFromAIResponse(worldInfoName, lastMessage.mes);
+            await updateGameDataFromAIResponseV2(worldInfoName, lastMessage.mes);
         } catch (error) {
             console.error('[OEOS] AI 回复处理失败:', error);
         }
     });
-
     console.info('[OEOS] AI 回复监听器已设置');
 }
 
@@ -863,6 +740,38 @@ function activateCharacterRegex(charIndex) {
         console.info(`[OEOS] 激活角色正则表达式: ${char.name}`);
     }
 }
+// V2 implementations based on ElementDataManager (non-breaking: only wired in export map)
+async function initializeGameDataFromChatV2(worldInfoName) {
+    try {
+        const mgr = getManager(worldInfoName);
+        await mgr.loadFromWiAndChat(chat || []);
+        await mgr.syncAll();
+        console.info('[OEOS] 初始化完成（元素数据对象）');
+    } catch (e) {
+        console.error('[OEOS] 初始化(元素数据)失败:', e);
+    }
+}
+
+async function updateGameDataFromAIResponseV2(worldInfoName, aiMessage) {
+    try {
+        const pages = extractPagesFromChat([{ mes: aiMessage }]);
+        const summaries = extractSummaryFromChat([{ mes: aiMessage }]);
+        if (pages.length === 0 && summaries.length === 0) return;
+        const mgr = getManager(worldInfoName);
+        await mgr.loadFromWiAndChat([]);
+        for (const { pageId, content } of pages) {
+            const s = summaries.find(x => x.pageId === pageId);
+            mgr.updatePage(pageId, content, s?.abstract);
+        }
+        for (const { pageId, abstract } of summaries) {
+            if (!pages.find(p => p.pageId === pageId)) mgr.updatePage(pageId, undefined, abstract);
+        }
+        mgr.scheduleSync(() => mgr.syncAll());
+    } catch (e) {
+        console.error('[OEOS] AI 回复更新(元素数据)失败:', e);
+    }
+}
+
 
 // 使用 ES6 模块导出，不使用 window 对象
 export {
@@ -889,8 +798,9 @@ Object.assign(window.oeosApi, {
     bindCharacter,
     isOEOSCharacter,                    // 检查是否为 OEOS 角色
     enableOEOSForCharacter,             // 启用 OEOS 支持
-    initializeGameDataFromChat,         // 从聊天记录初始化游戏数据
-    updateGameDataFromAIResponse,       // AI 回复后更新游戏数据
+    // V2（元素数据对象实现，稳定路径）
+    initializeGameDataFromChatV2,
+    updateGameDataFromAIResponseV2,
     // 聊天历史控制
     enableChatHistory,                  // 启用聊天历史（显示提示）
     disableChatHistory,                 // 禁用聊天历史（显示提示）
@@ -900,4 +810,14 @@ Object.assign(window.oeosApi, {
     waitForPromptManager,               // 等待 Prompt Manager 初始化
     enableChatHistorySilent,            // 启用聊天历史（静默模式）
     disableChatHistorySilent,           // 禁用聊天历史（静默模式）
+
+    // 调试专用
+    _getManager: () => { // 获取当前角色的 ElementDataManager 实例
+        const char = getCurrentCharacter();
+        if (!char?.data?.extensions?.world) {
+            console.warn('当前角色未绑定 World Info，无法获取 Manager');
+            return null;
+        }
+        return getManager(char.data.extensions.world);
+    },
 });

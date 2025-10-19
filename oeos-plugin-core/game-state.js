@@ -3,13 +3,7 @@
 import { saveWi, loadWi, getPresetByName, savePresetDirect } from './st-api.js';
 
 
-// 兼容层：将 toastr 调用映射到 console，后续可逐步删除 toastr 依赖
-const toastr = {
-    info: (...args) => console.info(...args),
-    success: (...args) => console.info(...args),
-    warning: (...args) => console.warn(...args),
-    error: (...args) => console.error(...args),
-};
+
 
 /**
  * 更新预设文件中指定提示词的 XML 标签内容

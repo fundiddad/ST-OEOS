@@ -414,7 +414,6 @@ Vue 组件渲染（say, choice, image 等）
 2. **充分利用 SillyTavern 原生系统**
    - 使用 World Info 存储游戏数据（页面、状态、图谱）
    - 使用 Prompt Manager 构建 AI 上下文
-   - 使用 Regex 系统提取 AI 生成的页面数据
    - 使用角色卡系统管理角色数据
 
 3. **保持松耦合**
@@ -424,50 +423,22 @@ Vue 组件渲染（say, choice, image 等）
 
 ### 拟实现方案
 
-#### 整体架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SillyTavern 窗口                          │
-│                                                              │
-│  ┌──────────────────────┐         ┌──────────────────────┐ │
-│  │  ST 核心             │         │  OEOS 插件           │ │
-│  │  (script.js)         │         │  (plugin-bridge.js)  │ │
-│  │                      │         │                      │ │
-│  │  - characters        │◄────────│  - getCharacters()   │ │
-│  │  - chat              │  import │  - bindCharacter()   │ │
-│  │  - world_info        │         │                      │ │
-│  │  - eventSource       │         │                      │ │
-│  └──────────────────────┘         └──────────────────────┘ │
-│                                             ▲                │
-│                                             │ window.oeosApi │
-│                                             ▼                │
-│                                    ┌──────────────────────┐ │
-│                                    │  OEOS Vue 应用       │ │
-│                                    │  (App.vue)           │ │
-│                                    │                      │ │
-│                                    │  - CharacterSelector │ │
-│                                    │  - OpenEosPlayer     │ │
-│                                    └──────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 数据流
+#### 数据流（V2，去除 Regex/旧路径）
 
 ```
 用户操作（选择选项）
     ↓
 Vue 应用调用 window.oeosApi.updateState()
     ↓
-plugin-bridge.js 更新 World Info（State）
+plugin-bridge.js 更新元素数据对象的 State 并防抖同步（ElementDataManager）
     ↓
-SillyTavern Prompt Manager 构建 AI 上下文（包含 World Info）
+SillyTavern Prompt Manager 构建 AI 上下文（从预设注入 summary/Graph/State/Dynamic-Context）
     ↓
-AI 生成新内容（包含 <ages> 标签）
+AI 生成新内容（包含 <Pages>/<summary> 标签）
     ↓
-Regex 系统提取页面数据
+ElementDataManager 解析标签，更新 pages/summary/graph/dynamicContext
     ↓
-plugin-bridge.js 保存到 World Info（Pages）
+同步到 World Info 与预设（近似原子提交 + 失败回滚）
     ↓
 Vue 应用通过 window.oeosApi.getPage() 读取页面
     ↓
@@ -517,7 +488,7 @@ OEOS 播放器渲染页面
 ### 4. 保持 World Info 紧凑（Token 效率）
 - 使用简洁的文本格式而非冗长的 JSON
 - 动态上下文只包含相关页面
-- 使用摘要系统减少 Token 消耗
+
 
 ### 5. 异步操作使用 async/await
 - 统一使用 `async/await` 而非回调或 Promise 链
@@ -547,7 +518,7 @@ OEOS 播放器渲染页面
    ↓
 3. 调用 window.oeosApi.getCharacters() 获取角色列表
    ↓
-4. 检测每个角色是否为 OEOS 角色（检查 World Info 中的 OEOS-character 标记）
+4. 检测每个角色是否为 OEOS 角色（检查 World Info 中的 OEOS-character 标记）,如果角色不是 OEOS 角色到阶段二
    ↓
 5. 显示角色列表，OEOS 角色带有绿色标识
 ```
@@ -564,10 +535,10 @@ OEOS 播放器渲染页面
 4. 在该文件中创建以下条目：
    - OEOS Character Marker（标记条目，disable: true）
    - Pages （页面数据库，disable: true）
-   - State（游戏状态，constant: true）
-   - Graph（页面关系图，constant: true）
-   - summary（页面摘要，constant: true）
-   - Dynamic-Context（动态上下文，constant: true）
+   - State（游戏状态，disable: true）
+   - Graph（页面关系图，disable: true）
+   - summary（页面摘要，disable: true）
+   - Dynamic-Context（动态上下文，disable: true）
    ↓
 5. 将 World Info 绑定到角色（character.data.extensions.world）
    ↓
@@ -585,6 +556,7 @@ OEOS 播放器渲染页面
 3. 遍历该角色的**所有聊天记录**，提取所有 <Pages > 和 <summary> 标签
    - 提取 <Pages >...</Pages > 标签内容（注意：标签无 id 属性）
    - 提取 <summary>...</summary> 标签内容
+   
    - 更新 Pages  条目（存储纯 OEOScript v4 代码，无 XML 标签）
    - 更新 summary 条目（存储摘要，无 XML 标签）
    - 更新 Graph 条目（自动提取 goto 命令）

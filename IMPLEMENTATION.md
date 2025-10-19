@@ -62,20 +62,17 @@
 - [x] 实现 summary 节点（页面摘要）
 - [x] 实现 Dynamic-Context 节点（动态上下文）
 
-**1.2 XML 标签提取系统**
-- [x] 实现 `extractSummaryFromChat()` - 从 chat 数组提取 `<summary>` 标签
-- [x] 实现 `extractGraphFromChat()` - 从 chat 数组提取 `<Graph>` 标签
-- [x] 实现 `extractStateFromChat()` - 从 chat 数组提取 `<State>` 标签
-- [x] 实现 `extractDynamicContextFromChat()` - 从 chat 数组提取 `<Dynamic-Context>` 标签
-- [x] 实现 `initializeGameDataFromChat()` - 进入游戏时遍历聊天记录初始化数据
-- [x] 实现 `updateGameDataFromAIResponse()` - AI 回复后更新数据
+**1.2 元素数据对象（V2）与标签提取（内置）**
+- [x] 引入 ElementDataManager 作为唯一数据源（pages/summary/graph/state/dynamicContext）
+- [x] `initializeGameDataFromChatV2()` - 进入游戏时：从 World Info + chat 生成元素数据并同步
+- [x] `updateGameDataFromAIResponseV2()` - AI 回复后：提取 <Pages>/<summary>，更新并同步
+- [x] 内置正则解析（模块内实现），不依赖 ST 的 Regex 系统
+- [x] 旧接口已移除：`initializeGameDataFromChat()`、`updateGameDataFromAIResponse()`
 
 **1.3 预设文件同步系统**
-- [x] 实现 `loadPreset()` - 读取预设文件
-- [x] 实现 `savePreset()` - 保存预设文件
-- [x] 实现 `updatePresetPromptContent()` - 更新预设文件中的提示词内容
-- [x] 实现 `updateAllPresetPrompts()` - 批量更新所有提示词
-- [x] 实现双向同步机制（世界树 + 预设文件）
+- [x] 读取/保存预设：`getPresetByName()` + `savePresetDirect()`
+- [x] `updatePresetPromptContent()` - 更新预设文件中的提示词内容
+- [x] 实现双向同步机制（世界树 + 预设文件），并加入“近似原子提交+回滚”
 
 #### 阶段 2：OEOS 引擎修改（优先级：🟠 高）✅ **已完成 (2025-10-12)**
 
