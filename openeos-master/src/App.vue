@@ -209,14 +209,22 @@ export default {
       this.loading = true;
       // 使用全局 API（解耦方案）
       try {
-        if (!window.oeosApi || !window.oeosApi.getPage) {
+        if (!window.oeosApi || !window.oeosApi.getPage || !window.oeosApi.getState) {
           throw new Error('OEOS API not available. Please ensure the plugin is loaded.');
         }
-        // 角色已通过 bindCharacter 初始化所需数据，这里直接读取起始页面
-        const startPageScript = await window.oeosApi.getPage('start');
+
+        // 获取当前游戏状态，从最后一个页面开始
+        const currentState = await window.oeosApi.getState();
+        const startPageId = currentState?.pageId || 'start';
+        const initialVariables = currentState?.variables || {};
+
+        console.info(`[OEOS] 从页面 '${startPageId}' 开始游戏，初始变量:`, initialVariables);
+
+        // 读取起始页面
+        const startPageScript = await window.oeosApi.getPage(startPageId);
 
         if (!startPageScript) {
-          throw new Error('Start page not found.');
+          throw new Error(`Page '${startPageId}' not found.`);
         }
 
         const script = OEOSV4Parser.toV1(startPageScript);
@@ -224,6 +232,11 @@ export default {
         this.author = 'The AI Dungeon Master';
         this.teaseId = 'ai-adventure-01';
         this.script = script;
+
+        // 恢复变量状态
+        if (Object.keys(initialVariables).length > 0) {
+          this.teaseStorage = JSON.stringify(initialVariables);
+        }
 
       } catch (e) {
         this.error = `Error initializing game: ${e.message}`;

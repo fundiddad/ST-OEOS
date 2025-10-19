@@ -156,6 +156,92 @@ function createPlaceholderPage(pageId) {
 }
 
 /**
+ * 获取当前游戏状态（最后一个页面ID和变量）
+ * @returns {Promise<{pageId: string, variables: object}|null>} - 当前状态或 null
+ */
+async function getState() {
+    try {
+        const char = getCurrentCharacter();
+        if (!char) {
+            console.warn('[OEOS] 没有选中的角色');
+            return null;
+        }
+
+        const worldInfoName = char.data?.extensions?.world;
+        if (!worldInfoName) {
+            console.warn('[OEOS] 角色没有绑定 World Info');
+            return null;
+        }
+
+        // 加载角色专属的 World Info
+        const worldInfo = await loadWi(worldInfoName);
+        if (!worldInfo || !worldInfo.entries) {
+            console.warn('[OEOS] World Info 不存在或为空');
+            return null;
+        }
+
+        // 查找 State 条目
+        let stateEntry = null;
+        for (const entry of Object.values(worldInfo.entries)) {
+            if (entry.comment === 'State') {
+                stateEntry = entry;
+                break;
+            }
+        }
+
+        if (!stateEntry || !stateEntry.content) {
+            console.warn('[OEOS] State 条目不存在或为空，返回默认起始状态');
+            return { pageId: 'start', variables: {} };
+        }
+
+        // 解析 State 字符串，格式：start(initialized:1) > forest(hp:100,gold:50) > cave(hp:80,gold:70)
+        const stateContent = stateEntry.content.trim();
+
+        // 匹配所有的 " > pageId(...)" 或 "pageId(...)" 格式
+        const stateMatches = stateContent.match(/>\s*(\w+)\s*\(([^)]*)\)/g);
+
+        if (!stateMatches || stateMatches.length === 0) {
+            console.warn('[OEOS] State 格式不正确，返回默认起始状态');
+            return { pageId: 'start', variables: {} };
+        }
+
+        // 获取最后一个状态
+        const lastStateStr = stateMatches[stateMatches.length - 1];
+
+        // 解析最后一个状态：> pageId(var1:val1,var2:val2)
+        const match = lastStateStr.match(/>\s*(\w+)\s*\(([^)]*)\)/);
+
+        if (!match) {
+            console.warn('[OEOS] 无法解析最后一个状态，返回默认起始状态');
+            return { pageId: 'start', variables: {} };
+        }
+
+        const pageId = match[1];
+        const variablesStr = match[2].trim();
+
+        // 解析变量：var1:val1,var2:val2
+        const variables = {};
+        if (variablesStr) {
+            const varPairs = variablesStr.split(',');
+            for (const pair of varPairs) {
+                const [key, value] = pair.split(':').map(s => s.trim());
+                if (key && value !== undefined) {
+                    // 尝试转换为数字，如果失败则保持字符串
+                    const numValue = Number(value);
+                    variables[key] = isNaN(numValue) ? value : numValue;
+                }
+            }
+        }
+
+        console.info(`[OEOS] 获取到当前状态: pageId=${pageId}, variables=`, variables);
+        return { pageId, variables };
+    } catch (error) {
+        console.error('[OEOS] 获取状态失败:', error);
+        return null;
+    }
+}
+
+/**
  * 处理来自 OEOS 播放器的状态更新并触发上下文重新计算
  * @param {object} newState - 新状态 { pageId: 'A1', variables: { hp: 90 } }
  */
@@ -790,6 +876,7 @@ if (!window.oeosApi) {
 Object.assign(window.oeosApi, {
 
     getPage,
+    getState,                           // 获取当前游戏状态
     updateState,
     updatePage: updatePageEntry,
     getCharacters,

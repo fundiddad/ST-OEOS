@@ -16,6 +16,13 @@ class OEOSV4Parser {
       const indentSize = line.length - line.lstrip(' ').length
       const lineContent = line.trim()
 
+      // 处理页面分隔符 ---
+      if (lineContent === '---' || lineContent.startsWith('---')) {
+        // 遇到 --- 时，清空上下文栈，结束当前页面
+        contextStack.length = 0
+        continue
+      }
+
       while (
         contextStack.length > 0 &&
         indentSize <= contextStack[contextStack.length - 1].indent

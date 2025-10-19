@@ -5,6 +5,7 @@ import { version } from '../../package.json'
 import axios from 'axios'
 import pageCompiler from '../util/pageCompiler'
 import Vue from 'vue'
+import OEOSV4Parser from '../util/v4-parser.js'
 
 const API_BASE_URL = `http://${process.env.BACKEND_HOST}:${process.env.BACKEND_PORT}/api`
 let navCounter = 0
@@ -305,8 +306,66 @@ export default {
       }
 
       try {
+        // 优先尝试从 World Info 获取页面（AI 驱动模式）
+        if (window.oeosApi && window.oeosApi.getPage) {
+          this.showPendingLoader = true
+
+          this.$emit('log', {
+            type: 'info',
+            message: `📖 Fetching page from World Info: ${pattern}...`,
+          })
+
+          const v4PageScript = await window.oeosApi.getPage(pattern)
+
+          this.showPendingLoader = false
+
+          if (v4PageScript) {
+            // 将 v4 格式转换为 v1 格式
+            const v1Script = OEOSV4Parser.toV1(v4PageScript)
+
+            // 获取页面内容（v1Script.pages 中应该只有一个页面）
+            const pageIds = Object.keys(v1Script.pages)
+            if (pageIds.length === 0) {
+              throw new Error(`No page found in v4 script for pattern: ${pattern}`)
+            }
+
+            const receivedPageId = pageIds[0]
+            const pageCommands = v1Script.pages[receivedPageId]
+
+            // 构造页面内容对象（与原有格式兼容）
+            const pageContent = {
+              script: pageCommands
+            }
+
+            // 编译页面脚本
+            const compiledPage = pageCompiler(pageContent)
+            const pageScript = this.interpreter.parse_(
+              compiledPage.script,
+              'oeosPageScript:' + receivedPageId
+            )
+
+            pageContent.compiledScript = pageScript
+
+            Vue.set(this.script.pages, receivedPageId, pageContent)
+            pageMediaCache[receivedPageId] = { images: [], sounds: [], videos: [] }
+
+            this.$emit('log', {
+              type: 'success',
+              message: `Page ${receivedPageId} loaded from World Info and compiled.`,
+            })
+            lastGetPageId = receivedPageId
+
+            return {
+              requestedPageId: pattern,
+              receivedPageId: receivedPageId,
+              content: pageContent,
+            }
+          }
+        }
+
+        // 如果 World Info 获取失败，尝试从 HTTP API 获取（传统模式）
         if (!this.clientId) {
-          const errorMsg = '❌ Client ID not available. Cannot fetch page.'
+          const errorMsg = '❌ Client ID not available and World Info fetch failed. Cannot fetch page.'
           this.$emit('log', { type: 'error', message: errorMsg })
           throw new Error(errorMsg)
         }
