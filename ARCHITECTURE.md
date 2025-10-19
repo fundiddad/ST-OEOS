@@ -184,12 +184,13 @@ World Info 条目通过以下方式激活：
       choice:
         - "继续探索":
           - goto: deep_forest
-
+    ---
     > deep_forest
       say "森林越来越深..."
-
+    ---
     > cave
       say "你发现了一个洞穴..."
+    ---
     ```
 
 **上下文注入方式**：
