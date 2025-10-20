@@ -293,7 +293,7 @@ class OEOSV4Parser {
 
 String.prototype.lstrip = function(chars) {
   let start = 0
-  while (chars.includes(this[start])) {
+  while (start < this.length && chars.includes(this[start])) {
     start++
   }
   return this.substring(start)
