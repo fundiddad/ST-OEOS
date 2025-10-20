@@ -170,7 +170,7 @@ class OEOSV4Parser {
     }
 
     if (shortcutCommands[cmdName]) {
-      const match = argsStr.match(/^(".*?"|\S+)\s*(.*)$/)
+      const match = argsStr.match(/^("(?:[^"\\]|\\.)*?"|\S+)\s*(.*)$/s)
       if (match) {
         const value = match[1]
         argsStr = match[2]
@@ -179,7 +179,7 @@ class OEOSV4Parser {
     }
 
     const namedArgs = [
-      ...argsStr.matchAll(/(\w+):\s*(".*?"|true|false|-?\d+\.?\d*|\$\S+)/g),
+      ...argsStr.matchAll(/(\w+):\s*("(?:[^"\\]|\\.)*?"|true|false|-?\d+\.?\d*|\$\S+)/g),
     ]
     for (const match of namedArgs) {
       params[match[1]] = this.parseV1Value(match[2])
@@ -235,7 +235,7 @@ class OEOSV4Parser {
       blockInfo.new_block = true
     }
 
-    const match = line.match(/^(".*?")\s*(.*)$/)
+    const match = line.match(/^("(?:[^"\\]|\\.)*?")\s*(.*)$/s)
     if (!match) throw new Error(`Could not parse option line: ${line}`)
     const labelStr = match[1]
     argsStr = match[2]
@@ -243,7 +243,7 @@ class OEOSV4Parser {
 
     const namedArgs = [
       ...argsStr.matchAll(
-        /(when|color|keep):\s*(".*?"|true|false|-?\d+\.?\d*|\$\S+)/g
+        /(when|color|keep):\s*("(?:[^"\\]|\\.)*?"|true|false|-?\d+\.?\d*|\$\S+)/g
       ),
     ]
     for (const match of namedArgs) {

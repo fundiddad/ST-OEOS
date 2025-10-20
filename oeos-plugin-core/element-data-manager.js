@@ -43,7 +43,7 @@ export class ElementDataManager {
             if (!msg?.mes) continue;
             let block;
             while ((block = PAGES_BLOCK_RE.exec(msg.mes)) !== null) {
-                const blockContent = block[1].trim();
+                const blockContent = block[1];
                 // Split by --- separator first, then parse each page
                 const pages = blockContent.split(/\n---\n/);
                 for (const page of pages) {
@@ -52,9 +52,12 @@ export class ElementDataManager {
 
                     const match = trimmedPage.match(/^>\s*(\w+)\s*\r?\n([\s\S]*)$/);
                     if (match) {
+                        const pageId = match[1].trim();
+                        const body = match[2].replace(/\s+$/, '');
+                        // 保持与 _deserializePages 一致的格式：包含 "> pageId" 行
                         result.push({
-                            pageId: match[1].trim(),
-                            content: match[2].replace(/\s+$/, '')
+                            pageId: pageId,
+                            content: `> ${pageId}\n${body}`
                         });
                     }
                 }
