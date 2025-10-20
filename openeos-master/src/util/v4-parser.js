@@ -1,6 +1,12 @@
 class OEOSV4Parser {
   static toV1(v4Script) {
+    console.log('[V4 Parser] ========== 开始解析 V4 脚本 ==========');
+    console.log(`[V4 Parser] 脚本长度: ${v4Script.length} 字符`);
+    console.log(`[V4 Parser] 脚本前 300 字符:\n${v4Script.substring(0, 300)}`);
+
     const lines = v4Script.split('\n')
+    console.log(`[V4 Parser] 总行数: ${lines.length}`);
+
     const v1Data = { pages: {} }
     const contextStack = []
 
@@ -15,6 +21,10 @@ class OEOSV4Parser {
 
       const indentSize = line.length - line.lstrip(' ').length
       const lineContent = line.trim()
+
+      if (lineNum <= 10) {
+        console.log(`[V4 Parser] 行 ${lineNum}: 缩进=${indentSize}, 内容="${lineContent.substring(0, 50)}${lineContent.length > 50 ? '...' : ''}"`);
+      }
 
       // 处理页面分隔符 ---
       if (lineContent === '---' || lineContent.startsWith('---')) {
@@ -32,6 +42,7 @@ class OEOSV4Parser {
 
       if (lineContent.startsWith('>') || lineContent.startsWith('#')) {
         const pageId = lineContent.substring(1).trim()
+        console.log(`[V4 Parser] 发现页面声明: "${pageId}" (行 ${lineNum})`);
         const pageCommands = []
         v1Data.pages[pageId] = pageCommands
         contextStack.length = 0
@@ -140,13 +151,23 @@ class OEOSV4Parser {
           })
         }
       } catch (e) {
+        console.error(`[V4 Parser] ❌ 解析错误 (行 ${lineNum}): "${lineContent}"`);
+        console.error(`[V4 Parser] 错误详情:`, e);
         throw new Error(
           `Error parsing line ${lineNum}: '${lineContent}' -> ${e.message}`
         )
       }
     }
 
+    console.log(`[V4 Parser] ✓ 解析完成，共 ${Object.keys(v1Data.pages).length} 个页面`);
+    console.log(`[V4 Parser] 页面列表:`, Object.keys(v1Data.pages));
+
     this.cleanup(v1Data)
+
+    console.log('[V4 Parser] ✓ 清理完成');
+    console.log('[V4 Parser] 最终结果:', v1Data);
+    console.log('[V4 Parser] ========== V4 脚本解析完成 ==========');
+
     return v1Data
   }
 

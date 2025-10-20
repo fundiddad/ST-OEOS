@@ -184,13 +184,18 @@ export default {
       }
     },
     showPage(pattern, noRun) {
+      console.log(`[OEOS Player] ========== showPage 调用: "${pattern}" ==========`);
       this.debugWarn('Showing Page:', pattern)
       const interpreter = this.interpreter
 
       // 1. 获取页面数据（异步）
+      console.log(`[OEOS Player] 调用 getPage("${pattern}")...`);
       this.getPage(pattern)
         .then(result => {
+          console.log(`[OEOS Player] getPage 返回:`, result);
+
           if (!result || !result.content) {
+            console.error(`[OEOS Player] ❌ 获取页面失败: ${pattern}`);
             this.$emit('log', {
               type: 'error',
               message: `❌ Failed to get page data for pattern: ${pattern}`,
@@ -199,6 +204,7 @@ export default {
           }
 
           const { requestedPageId, receivedPageId } = result
+          console.log(`[OEOS Player] 请求页面: ${requestedPageId}, 接收页面: ${receivedPageId}`);
 
           // --- 验证逻辑 ---
           if (requestedPageId !== receivedPageId) {
@@ -215,6 +221,7 @@ export default {
           }
 
           // --- 渲染逻辑 (仅当 pageId 匹配时执行) ---
+          console.log(`[OEOS Player] 开始渲染页面: ${receivedPageId}`);
           const pageId = receivedPageId
           const media = pageMediaCache[pageId] || {
             images: [],
@@ -226,10 +233,15 @@ export default {
             media.images.forEach(locator => this.preloadImage(locator, true))
 
           this.debug('Preload finished, rendering page:', pageId)
+          console.log(`[OEOS Player] 查找页面数据: this.script.pages["${pageId}"]`);
           const pageData = this.script.pages[pageId]
+          console.log(`[OEOS Player] 页面数据:`, pageData);
+
           const pageCode = pageData.compiledScript
+          console.log(`[OEOS Player] 编译后的脚本长度: ${pageCode ? pageCode.length : 'null'}`);
 
           if (!pageCode) {
+            console.error(`[OEOS Player] ❌ 页面 ${pageId} 的脚本未编译`);
             this.$emit('log', {
               type: 'error',
               message: `❌ Page script for ${pageId} is not compiled.`,
@@ -238,16 +250,24 @@ export default {
             return
           }
 
+          console.log(`[OEOS Player] 更新页面状态: ${this.currentPageId} -> ${pageId}`);
           this.lastPageId = this.currentPageId
           this.currentPageId = pageId
           navCounter++
           navIndex++
           this.beforePageChange()
 
+          console.log(`[OEOS Player] 执行 doNextPageFuncs()`);
           this.doNextPageFuncs()
+          console.log(`[OEOS Player] 将脚本添加到解释器`);
           interpreter.appendCode(pageCode)
           this.waitingForPageChange = false
-          if (!noRun) interpreter.run()
+          console.log(`[OEOS Player] 运行解释器 (noRun=${noRun})`);
+          if (!noRun) {
+            interpreter.run()
+            console.log(`[OEOS Player] ✓ 解释器运行完成`);
+          }
+          console.log(`[OEOS Player] ========== showPage 完成 ==========`);
         })
         .catch(error => {
           this.$emit('log', {
