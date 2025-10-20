@@ -86,34 +86,42 @@ export class ElementDataManager {
         const byComment = (name) => Object.values(entries).find(e => e.comment === name);
         const pagesEntry = byComment('Pages');
         const stateEntry = byComment('State');
-        const graphEntry = byComment('Graph');
         const summaryEntry = byComment('summary');
-        const dynEntry = byComment('Dynamic-Context');
 
-        // Deserialize existing WI content
-        if (pagesEntry?.content) this._deserializePages(pagesEntry.content);
-        if (summaryEntry?.content) this._deserializeSummary(summaryEntry.content);
-        this.state = (stateEntry?.content?.trim()) || '> start()';
-        if (graphEntry?.content) this._deserializeGraph(graphEntry.content);
-        if (dynEntry?.content) this.dynamicContext = dynEntry.content;
+        // 清空现有数据
+        this.pages.clear();
+        this.summary.clear();
 
-        // Enrich from chat
+        // 方案 A：聊天记录是唯一真实来源
+        // 1. 优先从聊天记录提取 pages 和 summary
         const pagesFromChat = ElementDataManager.extractPagesFromChat(chatArray);
         const sumFromChat = ElementDataManager.extractSummariesFromChat(chatArray);
-        let changed = false;
-        for (const { pageId, content } of pagesFromChat) {
-            const prev = this.pages.get(pageId);
-            if (prev !== content) { this.pages.set(pageId, content); changed = true; }
+
+        if (pagesFromChat.length > 0 || sumFromChat.length > 0) {
+            // 聊天记录有内容，使用聊天记录作为唯一来源
+            console.info('[OEOS] 从聊天记录加载页面数据（聊天记录优先）');
+            for (const { pageId, content } of pagesFromChat) {
+                this.pages.set(pageId, content);
+            }
+            for (const { pageId, abstract } of sumFromChat) {
+                this.summary.set(pageId, abstract);
+            }
+        } else {
+            // 聊天记录为空，从 World Info 加载作为后备
+            console.info('[OEOS] 聊天记录为空，从 World Info 加载页面数据（后备）');
+            if (pagesEntry?.content) this._deserializePages(pagesEntry.content);
+            if (summaryEntry?.content) this._deserializeSummary(summaryEntry.content);
         }
-        for (const { pageId, abstract } of sumFromChat) {
-            const prev = this.summary.get(pageId);
-            if (prev !== abstract) { this.summary.set(pageId, abstract); changed = true; }
-        }
-        if (changed) {
-            this.recomputeGraph();
-            this.recomputeDynamicContext();
-            this._dirty = true;
-        }
+
+        // 2. State 始终从 World Info 加载（记录玩家进度）
+        this.state = (stateEntry?.content?.trim()) || '> start()';
+
+        // 3. Graph 和 DynamicContext 自动计算（不从 World Info 加载）
+        this.recomputeGraph();
+        this.recomputeDynamicContext();
+
+        // 标记为需要同步
+        this._dirty = true;
     }
 
     updatePage(pageId, content, abstract) {
