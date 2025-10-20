@@ -68,6 +68,10 @@
 - [x] `updateGameDataFromAIResponseV2()` - AI 回复后：提取 <Pages>/<summary>，更新并同步
 - [x] 内置正则解析（模块内实现），不依赖 ST 的 Regex 系统
 - [x] 旧接口已移除：`initializeGameDataFromChat()`、`updateGameDataFromAIResponse()`
+- [x] **数据加载策略**：聊天记录优先（方案 A）
+  - 聊天记录是唯一真实来源
+  - 删除聊天记录中的页面后，World Info 也会同步删除
+  - 聊天记录为空时，从 World Info 加载作为后备
 
 **1.3 预设文件同步系统**
 - [x] 读取/保存预设：`getPresetByName()` + `savePresetDirect()`

@@ -682,16 +682,21 @@ OEOS 播放器渲染页面
 
 ### 关键技术点
 
-**1. 聊天记录提取**
+**1. 数据加载策略（聊天记录优先）**
 - **时机**：每次进入游戏时（调用 `bindCharacter`）
-- **范围**：遍历该角色的**所有聊天记录**（`chat` 数组）
-- **提取内容**：
-  - 使用正则提取 `<OEOS-page>...</OEOS-page>` 标签内容
-  - 使用正则提取 `<summary>...</summary>` 标签内容
-- **存储格式**：
-  - Pages ：存储纯 OEOScript v4 代码（无 XML 标签）
-  - summary：存储摘要（无 XML 标签）
-- **去重处理**：如果页面已存在，则跳过（不覆盖）
+- **策略**：聊天记录是唯一真实来源（方案 A）
+- **加载流程**：
+  1. 清空内存中的 pages 和 summary
+  2. 从聊天记录提取 `<Pages>...</Pages>` 和 `<summary>...</summary>` 标签
+  3. 如果聊天记录有内容，使用聊天记录作为唯一来源
+  4. 如果聊天记录为空，从 World Info 加载作为后备
+  5. State 始终从 World Info 加载（记录玩家进度）
+  6. Graph 和 DynamicContext 自动计算（不从 World Info 加载）
+- **优点**：
+  - 删除聊天记录中的页面后，World Info 也会同步删除
+  - 聊天记录是最新的、权威的数据源
+  - World Info 作为持久化缓存，不会因为删除聊天记录而丢失数据（后备机制）
+- **实现位置**：`element-data-manager.js` 的 `loadFromWiAndChat()` 方法
 
 
 **2. 动态上下文计算**
