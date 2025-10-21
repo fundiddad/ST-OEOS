@@ -206,52 +206,52 @@ export default {
 
     // New method to start the game via the ST plugin
     async startAiDrivenTease() {
-      console.log('[OEOS Player] ========== 开始初始化游戏 ==========');
+      // console.log('[OEOS Player] ========== 开始初始化游戏 ==========');
       this.loading = true;
       // 使用全局 API（解耦方案）
       try {
-        console.log('[OEOS Player] 检查 OEOS API...');
+        // console.log('[OEOS Player] 检查 OEOS API...');
         if (!window.oeosApi || !window.oeosApi.getPage || !window.oeosApi.getState) {
           throw new Error('OEOS API not available. Please ensure the plugin is loaded.');
         }
-        console.log('[OEOS Player] ✓ OEOS API 可用');
+        // console.log('[OEOS Player] ✓ OEOS API 可用');
 
         // 获取当前游戏状态，从最后一个页面开始
-        console.log('[OEOS Player] 获取游戏状态...');
+        // console.log('[OEOS Player] 获取游戏状态...');
         const currentState = await window.oeosApi.getState();
         const startPageId = currentState?.pageId || 'start';
         const initialVariables = currentState?.variables || {};
 
-        console.info(`[OEOS Player] ✓ 从页面 '${startPageId}' 开始游戏，初始变量:`, initialVariables);
+        // console.info(`[OEOS Player] ✓ 从页面 '${startPageId}' 开始游戏，初始变量:`, initialVariables);
 
         // 读取起始页面
-        console.log(`[OEOS Player] 读取页面 '${startPageId}'...`);
+        // console.log(`[OEOS Player] 读取页面 '${startPageId}'...`);
         const startPageScript = await window.oeosApi.getPage(startPageId);
 
         if (!startPageScript) {
           throw new Error(`Page '${startPageId}' not found.`);
         }
-        console.log(`[OEOS Player] ✓ 页面内容获取成功，长度: ${startPageScript.length} 字符`);
-        console.log(`[OEOS Player] 页面内容预览:\n${startPageScript.substring(0, 200)}...`);
+        // console.log(`[OEOS Player] ✓ 页面内容获取成功，长度: ${startPageScript.length} 字符`);
+        // console.log(`[OEOS Player] 页面内容预览:\n${startPageScript.substring(0, 200)}...`);
 
-        console.log('[OEOS Player] 解析 V4 脚本...');
+        // console.log('[OEOS Player] 解析 V4 脚本...');
         const script = OEOSV4Parser.toV1(startPageScript);
-        console.log('[OEOS Player] ✓ V4 脚本解析成功');
-        console.log('[OEOS Player] 解析结果:', script);
+        // console.log('[OEOS Player] ✓ V4 脚本解析成功');
+        // console.log('[OEOS Player] 解析结果:', script);
 
         this.title = 'AI Adventure';
         this.author = 'The AI Dungeon Master';
         this.teaseId = 'ai-adventure-01';
         this.script = script;
-        console.log('[OEOS Player] ✓ 脚本已设置到播放器');
+        // console.log('[OEOS Player] ✓ 脚本已设置到播放器');
 
         // 恢复变量状态
         if (Object.keys(initialVariables).length > 0) {
           this.teaseStorage = JSON.stringify(initialVariables);
-          console.log('[OEOS Player] ✓ 变量状态已恢复');
+          // console.log('[OEOS Player] ✓ 变量状态已恢复');
         }
 
-        console.log('[OEOS Player] ========== 游戏初始化完成 ==========');
+        // console.log('[OEOS Player] ========== 游戏初始化完成 ==========');
       } catch (e) {
         this.error = `Error initializing game: ${e.message}`;
         console.error('[OEOS Player] ❌ 初始化失败:', e);
