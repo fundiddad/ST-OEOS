@@ -128,7 +128,8 @@ async function getPage(pageId) {
         // ---
 
         // 使用正则提取从 "> pageId" 到下一个 "---" 或文件末尾的内容
-        const regex = new RegExp(`^>\\s*${pageId}\\s*\\r?\\n([\\s\\S]*?)(?=\\n---\\s*\\r?\\n|\\n---\\s*$|$)`, 'im');
+        // 注意：不使用 'm' 标志，避免 $ 匹配每行末尾导致提前停止
+        const regex = new RegExp(`(?:^|\\n)>\\s*${pageId}\\s*\\r?\\n([\\s\\S]*?)(?=\\n---|$)`, 'i');
         const match = pagesEntry.content.match(regex);
 
         if (match) {
