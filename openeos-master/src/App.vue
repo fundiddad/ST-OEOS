@@ -231,13 +231,13 @@ export default {
         if (!startPageScript) {
           throw new Error(`Page '${startPageId}' not found.`);
         }
-        // console.log(`[OEOS Player] ✓ 页面内容获取成功，长度: ${startPageScript.length} 字符`);
-        // console.log(`[OEOS Player] 页面内容预览:\n${startPageScript.substring(0, 200)}...`);
+         console.log(`[OEOS Player] ✓ 页面内容获取成功，长度: ${startPageScript.length} 字符`);
+         console.log(`[OEOS Player] 页面内容预览:\n${startPageScript.substring(0, 200)}...`);
 
         // console.log('[OEOS Player] 解析 V4 脚本...');
         const script = OEOSV4Parser.toV1(startPageScript);
         // console.log('[OEOS Player] ✓ V4 脚本解析成功');
-        // console.log('[OEOS Player] 解析结果:', script);
+         console.log('[OEOS Player] 解析结果:', script);
 
         this.title = 'AI Adventure';
         this.author = 'The AI Dungeon Master';

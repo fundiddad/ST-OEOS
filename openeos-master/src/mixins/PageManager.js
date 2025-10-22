@@ -3,6 +3,8 @@ import normalizeCommand from '../util/commandAdapter.js'
 import minimatch from 'minimatch'
 import compareVersions from 'compare-versions'
 import { version } from '../../package.json'
+import OEOSV4Parser from '../util/v4-parser'
+import pageCompiler from '../util/pageCompiler'
 
 let navCounter = 0
 let navIndex = 0
@@ -14,6 +16,9 @@ let nextPageFuncs = []
 let nextImageFuncs = []
 
 let pagesInstance = null
+
+// 页面缓存：存储已编译的页面
+let compiledPages = {}
 
 const isPattern = s => {
   if (typeof s !== 'string') return false
@@ -34,6 +39,7 @@ export default {
     navCounter = 0
     disabledPages = {}
     preloadedPage = {}
+    compiledPages = {} // 清空页面缓存
     document.addEventListener('visibilitychange', this.documentVisibilityChange)
   },
   beforeDestroy() {
@@ -49,7 +55,8 @@ export default {
   },
   methods: {
     getPageNames: function(pattern, onlyEnabled) {
-      const pages = Object.keys(this.pages())
+      // 从缓存中获取页面列表
+      const pages = Object.keys(compiledPages)
       if (!pattern) return pages
       const filter = minimatch.filter(pattern)
       return pages.filter(filter).filter(p => !onlyEnabled || !disabledPages[p])
@@ -152,67 +159,94 @@ export default {
         func = nextPageFuncs.shift()
       }
     },
-    showPage(patten, noRun) {
-      this.debugWarn('Showing Page:', patten)
+    /**
+     * 显示页面（异步方法）
+     * @param {string} pattern - 页面 ID 或模式
+     * @param {boolean} noRun - 是否不运行解释器
+     */
+    showPage(pattern, noRun) {
+      console.log(`[PageManager] 🎬 showPage 被调用: pattern="${pattern}", noRun=${noRun}`)
+      this.debugWarn('Showing Page:', pattern)
       const interpreter = this.interpreter
-      const pageScript = this.getPageScript(patten)
-      // Normalize commands to ensure backward compatibility with array format
-      if (pageScript && pageScript.script && Array.isArray(pageScript.script)) {
-        pageScript.script = pageScript.script.map(normalizeCommand)
-      }
 
-      // Handle new storage commands before interpreter parsing
-      if (pageScript && pageScript.script && Array.isArray(pageScript.script)) {
-        const remainingCommands = []
-        for (const command of pageScript.script) {
-          const commandName = Object.keys(command)[0]
-          const params = command[commandName]
-          let handled = false
-          switch (commandName) {
-            case 'storage.set':
-              this.storageSet(params.key, params.value)
-              handled = true
-              break
-            case 'storage.remove':
-              this.storageRemove(params.key)
-              handled = true
-              break
-            case 'storage.clear':
-              this.storageClear()
-              handled = true
-              break
+      // 异步获取页面
+      this.getPage(pattern)
+        .then(pageScript => {
+          console.log(`[PageManager] 📦 getPage 返回结果:`, pageScript)
+
+          if (!pageScript) {
+            console.error(`[PageManager] ❌ 获取页面失败: ${pattern}`)
+            return
           }
-          if (!handled) {
-            remainingCommands.push(command)
+
+          // Normalize commands to ensure backward compatibility with array format
+          if (pageScript && pageScript.script && Array.isArray(pageScript.script)) {
+            pageScript.script = pageScript.script.map(normalizeCommand)
           }
-        }
-        // Replace the script with the filtered one
-        pageScript.script = remainingCommands
-        // Invalidate cached compiled code if it exists
-        delete pageScript.code
-      }
 
-      const pageId = lastGetPageId
-      let pageCode = pageScript.code
-      if (!pageCode) {
-        // console.log('Building "' + pageId + '" page script', pageScript.script)
-        pageCode = interpreter.parse_(
-          pageScript.script,
-          'oeosPageScript:' + pageId
-        )
-        pageScript.code = pageCode
-      }
+          // Handle new storage commands before interpreter parsing
+          if (pageScript && pageScript.script && Array.isArray(pageScript.script)) {
+            const remainingCommands = []
+            for (const command of pageScript.script) {
+              const commandName = Object.keys(command)[0]
+              const params = command[commandName]
+              let handled = false
+              switch (commandName) {
+                case 'storage.set':
+                  this.storageSet(params.key, params.value)
+                  handled = true
+                  break
+                case 'storage.remove':
+                  this.storageRemove(params.key)
+                  handled = true
+                  break
+                case 'storage.clear':
+                  this.storageClear()
+                  handled = true
+                  break
+              }
+              if (!handled) {
+                remainingCommands.push(command)
+              }
+            }
+            // Replace the script with the filtered one
+            pageScript.script = remainingCommands
+            // Invalidate cached compiled code if it exists
+            delete pageScript.code
+          }
 
-      this.lastPageId = this.currentPageId
-      this.currentPageId = pageId
-      navCounter++ // Increment nav counter so we know when to stop executing page commands
-      navIndex++ // Increment nav depth, so we know to skip consecutive gotos.
-      this.beforePageChange()
-      this.waitingForPageChange = true
-      this.doNextPageFuncs()
-      interpreter.appendCode(pageCode)
-      this.waitingForPageChange = false
-      if (!noRun) interpreter.run()
+          const pageId = lastGetPageId
+          let pageCode = pageScript.code
+          if (!pageCode) {
+            console.log(`[PageManager] 🔨 重新编译页面: ${pageId}`)
+            pageCode = interpreter.parse_(
+              pageScript.script,
+              'oeosPageScript:' + pageId
+            )
+            pageScript.code = pageCode
+          }
+
+          console.log(`[PageManager] 🚀 准备执行页面代码...`)
+
+          this.lastPageId = this.currentPageId
+          this.currentPageId = pageId
+          navCounter++ // Increment nav counter so we know when to stop executing page commands
+          navIndex++ // Increment nav depth, so we know to skip consecutive gotos.
+          this.beforePageChange()
+          this.waitingForPageChange = true
+          this.doNextPageFuncs()
+          interpreter.appendCode(pageCode)
+          this.waitingForPageChange = false
+
+          console.log(`[PageManager] 🎯 调用 interpreter.run(), noRun=${noRun}`)
+          if (!noRun) {
+            interpreter.run()
+            console.log(`[PageManager] ✅ interpreter.run() 执行完成`)
+          }
+        })
+        .catch(error => {
+          console.error(`[PageManager] ❌ showPage 捕获错误:`, error)
+        })
     },
     lastGetPageId() {
       return lastGetPageId
@@ -221,15 +255,23 @@ export default {
       if (isPattern(pattern)) {
         return !!this.getPageNames(pattern, true).length
       } else {
-        return !!this.pages()[pattern]
+        return !!compiledPages[pattern]
       }
     },
-    getPage(pattern, preload) {
-      // if (!preload && preloadedPage[pattern]) {
-      //   const result = preloadedPage[pattern]
-      //   delete preloadedPage[pattern]
-      //   pattern = result
-      // }
+    /**
+     * 异步获取页面（只从 window.oeosApi.getPage 获取）
+     * @param {string} pattern - 页面 ID 或模式
+     * @param {boolean} preload - 是否预加载
+     * @returns {Promise<object>} - 编译后的页面对象
+     */
+    async getPage(pattern, preload) {
+      console.log(`[PageManager] 🔍 getPage 被调用: pattern="${pattern}", preload=${preload}`)
+
+      if (!pattern) {
+        throw new Error('Page pattern is required')
+      }
+
+      // 处理模式匹配（如 "forest_*"）
       if (isPattern(pattern)) {
         var lastLookup = preloadedPage[pattern]
         if (!lastLookup) {
@@ -248,7 +290,6 @@ export default {
             pages.length && pages[Math.floor(Math.random() * pages.length)]
           if (selectedPage) {
             if (preload) {
-              // preloadedPage[pattern] = selectedPage
               lastLookup.push(selectedPage)
             }
             pattern = selectedPage
@@ -257,13 +298,79 @@ export default {
           }
         }
       }
-      const result = this.pages()[pattern]
-      if (!result) {
-        this.debugWarn('Script pages', this.pages())
-        throw new Error(`Invalid page: ${pattern}`)
+
+      const pageId = pattern
+      console.log(`[PageManager] 📄 最终页面 ID: "${pageId}"`)
+
+      // 检查缓存
+      if (compiledPages[pageId]) {
+        console.log(`[PageManager] ✅ 从缓存中找到页面: ${pageId}`)
+        lastGetPageId = pageId
+        return compiledPages[pageId]
       }
-      lastGetPageId = pattern
-      return result
+
+      console.log(`[PageManager] 📡 缓存中没有找到，从 API 获取...`)
+
+      // 从 window.oeosApi.getPage 获取页面
+      if (!window.oeosApi || !window.oeosApi.getPage) {
+        throw new Error('window.oeosApi.getPage is not available')
+      }
+
+      try {
+        console.log(`[PageManager] 📞 调用 window.oeosApi.getPage("${pageId}")...`)
+        const v4PageScript = await window.oeosApi.getPage(pageId)
+        console.log(`[PageManager] 📥 收到 V4 脚本，长度: ${v4PageScript ? v4PageScript.length : 0}`)
+
+        if (!v4PageScript) {
+          throw new Error(`window.oeosApi.getPage() returned null for page: ${pageId}`)
+        }
+
+        // 将 V4 格式转换为 V1 格式
+        console.log(`[PageManager] 🔄 转换 V4 -> V1...`)
+        const v1Script = OEOSV4Parser.toV1(v4PageScript)
+        console.log(`[PageManager] ✓ V1 脚本:`, v1Script)
+
+        // 获取页面内容（v1Script.pages 中应该只有一个页面）
+        const pageIds = Object.keys(v1Script.pages)
+        if (pageIds.length === 0) {
+          throw new Error(`No page found in v4 script for pattern: ${pageId}`)
+        }
+
+        const receivedPageId = pageIds[0]
+        const pageCommands = v1Script.pages[receivedPageId]
+        console.log(`[PageManager] 📦 收到页面: "${receivedPageId}", 命令数: ${pageCommands.length}`)
+
+        // 编译页面脚本
+        console.log(`[PageManager] 🔨 编译页面脚本...`)
+        const compiledPage = pageCompiler(pageCommands)
+        console.log(`[PageManager] ✓ 编译完成`)
+
+        // 解析为可执行代码
+        console.log(`[PageManager] 🔧 解析为可执行代码...`)
+        const pageScript = this.interpreter.parse_(
+          compiledPage.script,
+          'oeosPageScript:' + receivedPageId
+        )
+        console.log(`[PageManager] ✓ 解析完成`)
+
+        // 构造页面对象（与原有格式兼容）
+        const pageObject = {
+          script: pageCommands,
+          code: pageScript,
+          ...compiledPage
+        }
+
+        // 缓存页面
+        compiledPages[receivedPageId] = pageObject
+        console.log(`[PageManager] 💾 页面已缓存: ${receivedPageId}`)
+
+        lastGetPageId = receivedPageId
+        return pageObject
+
+      } catch (error) {
+        console.error(`[PageManager] ❌ getPage 错误:`, error)
+        throw error
+      }
     },
     installPageManager(interpreter, globalObject) {
       const vue = this

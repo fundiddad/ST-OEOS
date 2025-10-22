@@ -33,11 +33,11 @@ export default {
         const origOptions = (optProps.options || {}).properties || []
         const options = []
 
-        console.log('OEOS Debug: Creating choice with options:', origOptions)
+        // console.log('OEOS Debug: Creating choice with options:', origOptions)
 
         for (const k of Object.keys(origOptions)) {
           const o = origOptions[k].properties
-          console.log('OEOS Debug: Processing choice option:', k, o)
+          // console.log('OEOS Debug: Processing choice option:', k, o)
           const option = interpreter.pseudoToNative(origOptions[k])
           option.label = this.sanitizeHtml(o.label)
           option._index = parseInt(k, 10)
@@ -111,12 +111,12 @@ export default {
       interpreter.setProperty(proto, 'Option', manager)
 
       function getOptionByIndex(choice, i) {
-        console.log(
-          'OEOS Debug: getOptionByIndex called with item:',
-          choice,
-          'and index:',
-          i
-        )
+        // console.log(
+        //   'OEOS Debug: getOptionByIndex called with item:',
+        //   choice,
+        //   'and index:',
+        //   i
+        // )
         if (!choice.options[i]) {
           return interpreter.createThrowable(
             interpreter.RANGE_ERROR,
