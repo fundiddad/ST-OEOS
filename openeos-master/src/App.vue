@@ -254,8 +254,8 @@ export default {
         // console.log('[OEOS Player] ========== 游戏初始化完成 ==========');
       } catch (e) {
         this.error = `Error initializing game: ${e.message}`;
-        console.error('[OEOS Player] ❌ 初始化失败:', e);
-        console.error('[OEOS Player] 错误堆栈:', e.stack);
+        // console.error('[OEOS Player] ❌ 初始化失败:', e);
+        // console.error('[OEOS Player] 错误堆栈:', e.stack);
       } finally {
         this.loading = false;
       }

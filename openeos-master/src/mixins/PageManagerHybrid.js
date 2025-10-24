@@ -195,7 +195,7 @@ export default {
           // console.log(`[OEOS Player] getPage 返回:`, result);
 
           if (!result || !result.content) {
-            console.error(`[OEOS Player] ❌ 获取页面失败: ${pattern}`);
+            // console.error(`[OEOS Player] ❌ 获取页面失败: ${pattern}`);
             this.$emit('log', {
               type: 'error',
               message: `❌ Failed to get page data for pattern: ${pattern}`,
@@ -241,7 +241,7 @@ export default {
           // console.log(`[OEOS Player] 编译后的脚本长度: ${pageCode ? pageCode.length : 'null'}`);
 
           if (!pageCode) {
-            console.error(`[OEOS Player] ❌ 页面 ${pageId} 的脚本未编译`);
+            // console.error(`[OEOS Player] ❌ 页面 ${pageId} 的脚本未编译`);
             this.$emit('log', {
               type: 'error',
               message: `❌ Page script for ${pageId} is not compiled.`,

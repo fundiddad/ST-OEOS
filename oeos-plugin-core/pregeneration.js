@@ -2,6 +2,7 @@
 // 预生成系统核心模块
 
 import { getManager } from './plugin-bridge.js';
+import { getConcurrentGenerator } from './concurrent-generator.js';
 
 /**
  * 预生成系统类
@@ -150,56 +151,17 @@ export class PregenerationSystem {
      */
     async executeGeneration(slotId, pageId) {
         try {
-            // 检查LittleWhiteBox是否可用
-            if (typeof window === 'undefined' || !window.streaming) {
-                throw new Error('LittleWhiteBox插件未加载');
-            }
+            const generator = getConcurrentGenerator();
 
-            // 构建参数
-            const args = {
-                id: slotId,
-                as: 'system'
-            };
-            const prompt = `goto: ${pageId}`;
+            // 使用新的并发生成器
+            const text = await generator.generatePage(slotId, pageId);
 
-            // 直接调用LittleWhiteBox API
-            const sessionId = await window.streaming.xbgenrawCommand(args, prompt);
-            console.log(`[OEOS-Pregen] 页面 ${pageId} 开始生成 (会话: ${sessionId})`);
-
-            // 等待生成完成
-            await this.waitForGenerationComplete(sessionId);
-
-            console.log(`[OEOS-Pregen] 页面 ${pageId} 生成完成`);
+            console.log(`[OEOS-Pregen] 页面 ${pageId} 生成完成，长度: ${text.length}`);
+            return text;
         } catch (error) {
             console.error(`[OEOS-Pregen] 页面 ${pageId} 生成失败:`, error);
+            throw error;
         }
-    }
-
-    /**
-     * 等待生成完成
-     */
-    async waitForGenerationComplete(sessionId) {
-        return new Promise((resolve) => {
-            const checkInterval = setInterval(() => {
-                try {
-                    if (typeof window !== 'undefined' && window.streaming) {
-                        const status = window.streaming.getStatus(sessionId);
-                        if (status && status.isCompleted) {
-                            clearInterval(checkInterval);
-                            resolve(status.text);
-                        }
-                    }
-                } catch (error) {
-                    // 忽略错误，继续等待
-                }
-            }, 200);
-            
-            // 超时保护（60秒）
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                resolve(null);
-            }, 60000);
-        });
     }
 
     /**
