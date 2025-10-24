@@ -22,10 +22,11 @@ import {
     restoreLastPreset
 } from './preset-switcher.js';
 import { ElementDataManager } from './element-data-manager.js';
+import { getPregenerationSystem } from './pregeneration.js';
 
 // Manager registry by worldInfoName
 const _oeosManagers = new Map();
-function getManager(worldInfoName) {
+export function getManager(worldInfoName) {
     if (!_oeosManagers.has(worldInfoName)) {
         _oeosManagers.set(worldInfoName, new ElementDataManager(worldInfoName));
     }
@@ -671,7 +672,11 @@ export async function bindCharacter(charIndex) {
         // 6. 不在此处直接修改 chatHistory，改为在角色切换事件中按需自动切换。
         //    这样可以确保仅在当前 OEOS 角色激活时禁用，其它角色不受影响。
 
-        // console.info(`[OEOS] 角色 ${character.name} 绑定成功`);
+        // 7. 启动预生成系统
+        const pregenSystem = getPregenerationSystem(worldInfoName);
+        pregenSystem.start();
+
+        console.info(`[OEOS] 角色 ${character.name} 绑定成功，预生成系统已启动`);
     } catch (error) {
         console.error(`[OEOS] 绑定角色失败: ${error.message}`);
         throw error;

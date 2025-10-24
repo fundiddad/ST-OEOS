@@ -394,5 +394,58 @@ export class ElementDataManager {
         const matches = stateString.match(/(\w+)\s*\(/g) || [];
         return matches.map(x => x.replace('(', '').trim());
     }
+
+    /**
+     * 为指定节点计算Dynamic-Context
+     * @param {string} targetPageId - 目标页面ID
+     * @returns {string} 该节点的Dynamic-Context
+     */
+    computeDynamicContextForNode(targetPageId) {
+        // 1. 构建到目标节点的路径
+        const simulatedPath = this._buildPathToNode(targetPageId);
+
+        // 2. 获取未来页面（子页面）
+        const future = this.graph.get(targetPageId) || [];
+
+        // 3. 获取历史页面（最近5页）
+        const history = simulatedPath.slice(-5);
+
+        // 4. 合并所有相关页面
+        const all = new Set([...future, ...history]);
+
+        // 5. 包含历史节点的子节点
+        for (const h of history) {
+            const kids = this.graph.get(h) || [];
+            for (const k of kids) all.add(k);
+        }
+
+        // 6. 提取页面内容
+        let block = '';
+        for (const id of all) {
+            const content = this._extractPageSource(id);
+            if (content) block += content + '\n\n';
+        }
+
+        return block.trim();
+    }
+
+    /**
+     * 构建到目标节点的路径（从start到目标节点）
+     * @param {string} targetPageId - 目标页面ID
+     * @returns {string[]} 路径数组
+     */
+    _buildPathToNode(targetPageId) {
+        // 从当前State获取路径
+        const currentPath = this._parseStatePath(this.state);
+
+        // 如果目标节点已在当前路径中，直接返回到该节点的路径
+        const index = currentPath.indexOf(targetPageId);
+        if (index !== -1) {
+            return currentPath.slice(0, index + 1);
+        }
+
+        // 否则，将目标节点添加到当前路径末尾
+        return [...currentPath, targetPageId];
+    }
 }
 
