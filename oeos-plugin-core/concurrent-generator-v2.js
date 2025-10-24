@@ -296,7 +296,7 @@ export class ConcurrentGeneratorV2 {
         const body = {
             messages,
             model,
-            stream: true,
+            stream: oai_settings.stream_openai ?? true,
             chat_completion_source,
             temperature,
             presence_penalty,
@@ -314,19 +314,24 @@ export class ConcurrentGeneratorV2 {
             body.max_output_tokens = max_tokens;
         }
 
-        // 反向代理配置
-        if (oai_settings.reverse_proxy) {
-            body.reverse_proxy = String(oai_settings.reverse_proxy).trim().replace(/\/?$/, '');
-            if (oai_settings.proxy_password) {
-                body.proxy_password = oai_settings.proxy_password;
-            }
+        // 反向代理配置（检查是否有值）
+        const reverseProxy = String(oai_settings.reverse_proxy || '').trim();
+        if (reverseProxy) {
+            body.reverse_proxy = reverseProxy.replace(/\/?$/, '');
+        }
+
+        const proxyPassword = String(oai_settings.proxy_password || '').trim();
+        if (proxyPassword) {
+            body.proxy_password = proxyPassword;
         }
 
         // Custom API特殊处理
         if (chat_completion_source === chat_completion_sources.CUSTOM) {
-            if (oai_settings.custom_url) {
-                body.custom_url = oai_settings.custom_url;
+            const customUrl = String(oai_settings.custom_url || '').trim();
+            if (customUrl) {
+                body.custom_url = customUrl;
             }
+
             if (oai_settings.custom_include_headers) {
                 body.custom_include_headers = oai_settings.custom_include_headers;
             }
