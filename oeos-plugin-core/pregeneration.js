@@ -2,7 +2,7 @@
 // 预生成系统核心模块
 
 import { getManager } from './plugin-bridge.js';
-import { getConcurrentGenerator } from './concurrent-generator.js';
+import { getConcurrentGeneratorV2 } from './concurrent-generator-v2.js';
 
 /**
  * 预生成系统类
@@ -151,9 +151,9 @@ export class PregenerationSystem {
      */
     async executeGeneration(slotId, pageId) {
         try {
-            const generator = getConcurrentGenerator();
+            const generator = getConcurrentGeneratorV2();
 
-            // 使用新的并发生成器
+            // 使用V2并发生成器（保存到聊天记录并显示在UI）
             const text = await generator.generatePage(slotId, pageId);
 
             console.log(`[OEOS-Pregen] 页面 ${pageId} 生成完成，长度: ${text.length}`);
