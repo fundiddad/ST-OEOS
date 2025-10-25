@@ -31,8 +31,8 @@ export class PregenerationSystem {
         setInterval(async () => {
             try {
                 const mgr = getManager(this.worldInfoName);
-                await mgr.loadFromWiAndChat([]);
-                
+                // 不需要重新加载，直接读取已有数据
+
                 const path = mgr._parseStatePath(mgr.state);
                 const currentPageId = path[path.length - 1];
                 
@@ -79,8 +79,8 @@ export class PregenerationSystem {
      */
     async pregenerateLayer1(currentPageId) {
         const mgr = getManager(this.worldInfoName);
-        await mgr.loadFromWiAndChat([]);
-        
+        // 不需要重新加载，直接读取已有数据
+
         const children = mgr.graph.get(currentPageId) || [];
         const existingPages = new Set(mgr.pages.keys());
         const missing = children.filter(id => !existingPages.has(id));
@@ -99,8 +99,8 @@ export class PregenerationSystem {
      */
     async pregenerateLayer2(currentPageId) {
         const mgr = getManager(this.worldInfoName);
-        await mgr.loadFromWiAndChat([]);
-        
+        // 不需要重新加载，直接读取已有数据
+
         const firstLayerPages = mgr.graph.get(currentPageId) || [];
         const existingPages = new Set(mgr.pages.keys());
         

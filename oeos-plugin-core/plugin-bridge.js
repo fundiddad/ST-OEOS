@@ -255,8 +255,7 @@ async function updateState(newState) {
         if (!worldInfoName) throw new Error('角色没有绑定 World Info');
 
         const mgr = getManager(worldInfoName);
-        // ensure baseline loaded from WI before updating
-        await mgr.loadFromWiAndChat([]);
+        // 不需要重新加载，直接更新状态
         mgr.updateState(newState.pageId, newState.variables || {});
         // debounce sync
         mgr.scheduleSync(() => mgr.syncAll());
@@ -851,7 +850,7 @@ async function updateGameDataFromAIResponseV2(worldInfoName, aiMessage) {
         const summaries = extractSummaryFromChat([{ mes: aiMessage }]);
         if (pages.length === 0 && summaries.length === 0) return;
         const mgr = getManager(worldInfoName);
-        await mgr.loadFromWiAndChat([]);
+        // 不需要重新加载，直接更新新页面
         for (const { pageId, content } of pages) {
             const s = summaries.find(x => x.pageId === pageId);
             mgr.updatePage(pageId, content, s?.abstract);
