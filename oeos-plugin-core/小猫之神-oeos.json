@@ -296,7 +296,7 @@
             "name": "（不要关）上下文构造-衔接",
             "enabled": true,
             "role": "system",
-            "content": "|小猫之神|懂了喵！那接下来？\n|用户|接下来我希望小猫之神能帮我继续游戏剧情，不过必须必须需要按照OEOS的语法规则来，事成之后草莓味小鱼干少不了！\n|小猫之神|喵喵喵——哈~ OEOS script语法,有意思，本喵可是神，语法什么的都是小意思，那开始介绍吧喵~\n|用户|这些是历史记录，小猫之神请帮我从这之后继续：\n------\n|游戏剧情|",
+            "content": "|小猫之神|懂了喵！那接下来？\n|用户|接下来我希望小猫之神能帮我继续游戏剧情,再写一个Page就好了，不过必须必须需要按照OEOS的语法规则来，事成之后草莓味小鱼干少不了！\n|小猫之神|喵喵喵——哈~ OEOS script语法,有意思，本喵可是神，语法什么的都是小意思，那开始介绍吧喵~\n|用户|这些是历史记录，小猫之神请帮我从这之后继续：\n------\n|游戏剧情|",
             "system_prompt": true,
             "marker": false,
             "forbid_overrides": false,
@@ -342,7 +342,7 @@
             "name": "（三选一）预填-继续游戏",
             "enabled": true,
             "role": "system",
-            "content": "|小猫之神|嗯，看完了喵，你还有什么别的要求吗喵？\n|用户|有的有的而且很多，我一个个说：\n{{setvar::prefill1::{{getvar::think3}}\n|小猫之神|{{getvar::think1}}从哪继续来着？\n|用户|这里这里{{getvar::zhaunshu}}：\n|{{user}}|\n{{lastUserMessage}}\n|小猫之神|OK喵！马上开始，快去准备小鱼干吧喵\n|用户|这就去这就去~}}{{setvar::prefill::\n|小猫之神|\n<think_nya~>\n有点意思喵……让我想想喵呜……\n{{getvar::think2}}\n首先}}",
+            "content": "|小猫之神|嗯，看完了喵，你还有什么别的要求吗喵？\n|用户|有的有的而且很多，我一个个说：\n{{setvar::prefill1::{{getvar::think3}}\n|小猫之神|{{getvar::think1}}从哪继续来着？\n|用户|这里这里{{getvar::zhaunshu}}：\n帮我写这个页面的内容：{{lastUserMessage}}\n|小猫之神|OK喵！马上开始，快去准备小鱼干吧喵\n|用户|这就去这就去~}}{{setvar::prefill::\n|小猫之神|\n<think_nya~>\n有点意思喵……让我想想喵呜……\n{{getvar::think2}}\n首先}}",
             "system_prompt": true,
             "marker": false,
             "forbid_overrides": true,
@@ -470,7 +470,7 @@
             "marker": false,
             "name": "不要转述",
             "role": "system",
-            "content": "{{setvar::zhaunshu::，然后把我发的内容当成剧情已经发生的一部分就好，不用再转述一遍，直接从之后继续就行啦}}",
+            "content": "{{setvar::zhaunshu::，然后把我发的内容当成剧情已经发生的一部分就好，不用再转述一遍，直接从之后继续就行啦，只需要再完成这一个页面的内容：}}",
             "injection_position": 0,
             "injection_depth": 4,
             "injection_order": 100,
@@ -818,7 +818,7 @@
             "marker": false,
             "name": "Graph",
             "role": "system",
-            "content": "start > who_is_seraphina, thank_seraphina, what_happened;\nwhat_happened > ask_about_beasts, ask_about_magic, thank_seraphina_again, try_to_sit_up;\nprepare_food > food_is_ready;\nfood_is_ready > finish_meal;\nfinish_meal > talk_about_seraphina, talk_about_forest, deep_sleep;",
+            "content": "start > who_is_seraphina, thank_seraphina, what_happened;\n",
             "injection_position": 0,
             "injection_depth": 4,
             "injection_order": 100,
@@ -832,7 +832,7 @@
             "marker": false,
             "name": "summary",
             "role": "system",
-            "content": "start: 玩家在一间小屋中醒来，森林的守护者塞拉菲娜迎接了他。塞拉菲娜治愈了玩家的伤口并鼓励其休息。玩家面临着进一步询问情况的选择。;\nwhat_happened: 塞拉菲娜向玩家解释了发现他的经过——在森林深处的一场战斗后，玩家因重伤而昏迷。她开始为玩家熬制新的药剂，并通过一条状态栏（notification）向玩家展示其“重伤”状态。一个异步计时器（timer）开始倒数药剂的熬制时间，计时结束后玩家可以通过互动按钮喝下药剂，将状态更新为“恢复中”。;\nthank_seraphina: 玩家向塞拉菲娜道谢。她接受了感谢，并温柔地照顾玩家，给他喝了草药茶。页面引入了健康状态栏，并提供食物选择。;\nprepare_food: 塞拉菲娜为玩家准备食物，期间使用计时器表示等待时间，增加沉浸感。;\nfood_is_ready: 塞拉菲娜端来食物，并亲自喂给玩家。期间发生了一个亲密的意外（舔掉嘴角的饭粒），为后续关系发展埋下伏笔。;\nfinish_meal: 玩家吃完食物，健康状态得到改善（状态栏更新）。塞拉菲娜建议玩家休息，并提供了新的对话选项：了解她自己、了解森林或继续睡觉。;",
+            "content": "start: 玩家在一间小屋中醒来，森林的守护者塞拉菲娜迎接了他。塞拉菲娜治愈了玩家的伤口并鼓励其休息。玩家面临着进一步询问情况的选择;\n",
             "injection_position": 0,
             "injection_depth": 4,
             "injection_order": 100,
@@ -846,7 +846,7 @@
             "marker": false,
             "name": "Dynamic-Context",
             "role": "system",
-            "content": "> what_happened\n  audio.play \"https://example.com/audio/calm_forest_ambience.mp3\" id: \"forest_bgm\" loops: 0 background: true volume: 0.6\n  eval code: \"storage.set('player_condition', '重伤');\"\n  notification.create id: \"statusBar\" label: \"<b>身体状况:</b> <font color='red'><eval>storage.get('player_condition')</eval></font>\"\n  timer duration: \"2s\"\n  say \"<font color='#DDA0DD'>“你应该是误入了森林的深处。那里是禁区，即使是胆子最大的猎人也不会轻易靠近。我听到了一阵不寻常的骚动……野兽的嘶吼和打斗声，持续了很久。”</font>\"\n  timer duration: \"3s\"\n  say \"<font color='#DDA0DD'>“等我赶到的时候，战斗已经结束了。几只鬃毛鬣狗的尸体倒在旁边，但……你也倒在了血泊里，人事不省。你的伤势很重，我只能先把你带回我这里。幸好，我的魔法还有些用处。”</font>\"\n  timer duration: \"3s\"\n  say \"<font color='#DDA0DD'>“你失血很多，而且身体非常虚弱。我已经为你做过初步的治疗了，但想要完全恢复，还需要一些时间。”</font>\"\n  timer duration: \"1.5s\"\n  say \"<font color='#DDA0DD'>“我再去为你准备一份促进愈合的药剂。你在这里别动，安心休息就好。”</font>\"\n  \n  timer duration: \"45s\" id: \"potion_brewing\" style: \"bar\"\n    commands\n      say mode: \"instant\" \"<i>陶锅里的药剂冒着舒缓的热气，颜色从深褐色渐渐转为温和的琥珀色，浓郁的草药香气充满了整个小屋。</i>\"\n      notification.create id: \"potion_ready\" label: \"药剂熬好了。\" duration: \"60s\" button: \"喝下它\"\n        commands\n          eval code: \"storage.set('player_condition', '恢复中');\"\n          say \"<font color='#DDA0DD'>“好了，把它喝了吧，对你的身体有好处。”</font> <br>你接过她递来的温热木碗，将里面琥珀色的液体一饮而尽。一股暖流从胃里散开，流向四肢百骸，受伤的部位传来一阵酥麻的舒适感。\"\n          notification.create id: \"statusBar\" label: \"<b>身体状况:</b> <font color='orange'><eval>storage.get('player_condition')</eval></font>\"\n          notification.remove \"potion_ready\"\n          storage.set key: \"drank_potion\" value: true\n      \n  choice\n    \"那些野兽是什么？\"\n      goto ask_about_beasts\n    \"你的魔法...是什么样的？\"\n      goto ask_about_magic\n    \"谢谢你，让你担心了。\"\n      goto thank_seraphina_again\n    \"我能...试着坐起来吗？\" when: \"$storage.get('drank_potion') == true\"\n      goto try_to_sit_up\n\n> start\n  say \"你猛然惊醒，回想起自己是如何深入森林，又是如何被野兽袭击的。当你的眼睛适应了房间里柔和的光线时，那些记忆渐渐模糊了。\"\r\n  say \"“啊，你终于醒了。我真担心，我发现你的时候，你浑身是血，不省人事。”\"\r\n  say \"她走过来，握住你的手，她的触摸传来温暖和慰藉，嘴唇形成一个温柔、关怀的微笑。\"\r\n  say \"“我叫塞拉菲娜，是这片森林的守护者——我已经尽我所能用魔法治愈了你的伤口。你感觉怎么样？希望这杯茶能帮你恢复体力。”\"\r\n  say \"她琥珀色的眼睛凝视着你，充满了对你安康的同情和关切。\"\r\n  say \"“请休息吧，你在这里很安全。我会照顾你，但你需要休息。我的魔法能做的也只有这么多了。”\"\r\n  choice\r\n    \"你是谁？\"\r\n      goto who_is_seraphina\r\n    \"谢谢你救了我。\"\r\n      goto thank_seraphina\r\n    \"发生了什么事？\"\r\n      goto what_happened\r\n---",
+            "content": "> start\n  say \"你猛然惊醒，回想起自己是如何深入森林，又是如何被野兽袭击的。当你的眼睛适应了房间里柔和的光线时，那些记忆渐渐模糊了。\"\n  say \"“啊，你终于醒了。我真担心，我发现你的时候，你浑身是血，不省人事。”\"\n  say \"她走过来，握住你的手，她的触摸传来温暖和慰藉，嘴唇形成一个温柔、关怀的微笑。\"\n  say \"“我叫塞拉菲娜，是这片森林的守护者——我已经尽我所能用魔法治愈了你的伤口。你感觉怎么样？希望这杯茶能帮你恢复体力。”\"\n  say \"她琥珀色的眼睛凝视着你，充满了对你安康的同情和关切。\"\n  say \"“请休息吧，你在这里很安全。我会照顾你，但你需要休息。我的魔法能做的也只有这么多了。”\"\n  choice\n    \"你是谁？\"\n      goto who_is_seraphina\n    \"谢谢你救了我。\"\n      goto thank_seraphina\n    \"发生了什么事？\"\n      goto what_happened\n---",
             "injection_position": 0,
             "injection_depth": 4,
             "injection_order": 100,
@@ -902,7 +902,7 @@
             "marker": false,
             "name": "⚙️OEOS设定",
             "role": "system",
-            "content": "喵喵神只需要再写下一个page就可以了\n一定一定一定要遵循<OEOS-script>的规定，不然扣你小鱼干~~~\nOEOS script的page 一定要用<Pages></Pages>标签包上\nOEOS游戏就是多使用交互功能，就是按钮、计时器、音频、状态栏什么的啦~~都用上~都用上，而且要用得恰到好处，服务于游戏和剧情，这个非常重要，交互的核心呢~！\n还要一点~~每个pages的长度长一点，控制在三分钟以上哇\n鼓励区分对话、行动，使用不同颜色区分不同人物。写得好奖励好多好多小鱼干！\n",
+            "content": "喵喵神只能写一个page页面，不能写多了。不然扣你小鱼干~~~\n一定一定一定要遵循<OEOS-script>的规定，不然扣你小鱼干~~~\nOEOS script的page 一定要用<Pages></Pages>标签包上\nOEOS游戏就是多使用交互功能，就是按钮、计时器、音频、状态栏什么的啦~~都用上~都用上，而且要用得恰到好处，服务于游戏和剧情，这个非常重要，交互的核心呢~！\n还要一点~~每个pages的长度长一点，控制在三分钟以上哇\n鼓励区分对话、行动，使用不同颜色区分不同人物。写得好奖励好多好多小鱼干！\n",
             "injection_position": 0,
             "injection_depth": 4,
             "injection_order": 100,
@@ -1272,5 +1272,236 @@
     "request_images": false,
     "seed": -1,
     "n": 1,
-    "extensions": {}
+    "extensions": {
+        "SPreset": {
+            "ChatSquash": {
+                "enabled": true,
+                "separate_chat_history": false,
+                "parse_clewd": false,
+                "role": "assistant",
+                "stop_string": "<end>",
+                "user_prefix": "</小猫之神世界书处理>\n\n|{{user}}|\n",
+                "user_suffix": "<小猫之神世界书处理>",
+                "char_prefix": "</小猫之神世界书处理>\n\n|游戏剧情|\n",
+                "char_suffix": "<end><小猫之神世界书处理>",
+                "prefix_system": "",
+                "suffix_system": "",
+                "enable_squashed_separator": true,
+                "squashed_separator_regex": false,
+                "squashed_separator_string": "<|sep|>",
+                "squashed_post_script_enable": true,
+                "squashed_post_script": "content => {\n  const usernameRegex = /\\|用户：(.*?)\\|/;\n\n  const usernameMatches = content.match(usernameRegex);\n  let username = '用户';\n  if (usernameMatches && usernameMatches.length > 1) {\n    username = usernameMatches[1];\n  }\n\n  content = content.replace(usernameRegex, '');\n\n  // 匹配所有 <小猫之神世界书处理>...</小猫之神世界书处理> 的内容\n  const regex = /<小猫之神世界书处理>([\\s\\S]*?)<\\/小猫之神世界书处理>/g;\n\n  // 先提取所有匹配内容\n  const matches = [];\n  let match;\n  while ((match = regex.exec(content)) !== null) {\n    matches.push(match[1]);\n  }\n\n  // 去掉原来的标签和内容\n  const withoutTags = content.replace(regex, '');\n\n  const processedContent = matches.join('\\n').trim();\n\n  // 把提取的内容追加到底部\n  let result = withoutTags.replaceAll(\n    '|小猫之神_世界书|',\n    processedContent ? '\\n\\n|额外信息&要求| \\n' + processedContent : '',\n  ).trim();\n  \n  const deleteRegex = /\\|delete\\|[\\s\\S]*?\\|\\/delete\\|/g;\n  result = result.replace(deleteRegex, '');\n\n  let prev = null; // 'cat' | 'user' | null\n  const re = /[\\n]*\\|(小猫之神|用户)\\|/g;\n\n  return String(result).replace(re, (_, who) => {\n    const isCat = who === '小猫之神';\n    let replacement;\n\n    if (isCat) {\n      replacement = `\"},\\n  {\"role\": \"soliumbra\", \"content\": \"`;\n      prev = 'cat';\n    } else {\n      const prefix = prev === 'cat' ? '<end>' : '';\n      replacement = `${prefix}\"},\\n  {\"role\": \"${username}\", \"content\": \"`;\n      prev = 'user';\n    }\n\n    return replacement;\n  });\n};\n",
+                "enable_stop_string": true
+            },
+            "RegexBinding": {
+                "regexes": [
+                    {
+                        "id": "1d78fce4-3e3c-4d8f-b9dc-f26555be0a6d",
+                        "scriptName": "思维链标签转义",
+                        "findRegex": "/<([\\s\\S]*?)>(?=[\\s\\S]*?<\\/(meow|think_nya~)>)/g",
+                        "replaceString": "$1",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "69ddfba5-b9af-4fea-9d96-490d85f6b66f",
+                        "scriptName": "【小猫之神】思维链折叠 2.5（含字体 by To: mato",
+                        "findRegex": "/([\\s\\S]*)<\\/(meow|think_nya~)>/g",
+                        "replaceString": "```\n<!DOCTYPE html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>小猫之神 - 折叠栏</title>\n    <style>\n\n      @font-face {\n        font-family: 'CutieFont';\n        src: url('https://files.catbox.moe/0kgfu8.ttf') format('truetype');\n        font-display: swap;\n      }\n\n      * {\n        margin: 0; padding: 0; box-sizing: border-box;\n      }\n\n      body {\n        font-family: 'CutieFont', 'Microsoft YaHei', Arial, sans-serif;\n        background: transparent;\n        padding: 2px; margin: 0; display: flex;\n        align-items: flex-start; justify-content: center;\n      }\n\n      .cat-collapsible {\n        width: 100%;\n        background: linear-gradient(145deg, rgba(255, 240, 245, 0.95), rgba(255, 228, 235, 0.9));\n        border-radius: 25px;\n        border: 1px solid rgba(255, 255, 255, 0.8);\n        overflow: hidden;\n        box-shadow: 0 6px 18px rgba(211, 137, 156, 0.25),\n          inset 0 2px 4px rgba(255, 255, 255, 0.7);\n        backdrop-filter: blur(12px);\n        -webkit-backdrop-filter: blur(12px);\n        transition: all 0.3s ease-in-out;\n        position: relative;\n      }\n\n      .cat-collapsible:hover {\n        box-shadow: 0 8px 20px rgba(211, 137, 156, 0.3),\n          inset 0 2px 4px rgba(255, 255, 255, 0.7);\n      }\n      \n      .cat-header {\n        position: relative; padding: 12px 20px; cursor: pointer;\n        display: flex; align-items: center; justify-content: space-between;\n        border-bottom: 1px dashed rgba(255, 192, 203, 0.5);\n        transition: all 0.3s ease;\n      }\n\n      .cat-header:hover {\n        background: rgba(255, 255, 255, 0.2);\n      }\n\n      .cat-title {\n        display: flex; align-items: center; gap: 10px;\n        font-size: 18px; font-weight: bold; color: #c58798;\n        text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);\n      }\n\n      .cat-title-icon {\n        height: 28px; \n        width: auto;  \n        max-width: 40px; \n        vertical-align: middle; \n        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));\n        transition: opacity 0.3s ease; \n      }\n\n      .toggle-icon {\n        width: 28px; height: 28px; border-radius: 50%;\n        background: linear-gradient(145deg, #ffccd5, #ffb3c1);\n        display: flex; align-items: center; justify-content: center;\n        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n        box-shadow: 0 3px 6px rgba(255, 179, 193, 0.5);\n        position: relative;\n      }\n      .toggle-icon::before {\n        content: '+'; color: white; font-size: 20px; font-weight: bold;\n        line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);\n        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n      }\n      .cat-collapsible.expanded .toggle-icon {\n        background: linear-gradient(145deg, #ffb3c1, #ff9aa2);\n        transform: scale(1.1) rotate(360deg);\n      }\n      .cat-collapsible.expanded .toggle-icon::before {\n        transform: rotate(135deg);\n      }\n      .cat-content {\n        max-height: 0; overflow: hidden;\n        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);\n        background-image:\n          linear-gradient(to right, rgba(255, 192, 203, 0.3) 1px, transparent 1px),\n          linear-gradient(to bottom, rgba(255, 192, 203, 0.3) 1px, transparent 1px),\n          linear-gradient(to bottom, rgba(255, 248, 250, 0.9) 0%, rgba(255, 235, 240, 1) 100%),\n          radial-gradient(rgba(255, 192, 203, 0.4) 1px, transparent 1px);\n        background-size: 20px 20px, 20px 20px, auto, 10px 10px;\n      }\n      .cat-content-inner {\n        padding: 20px 25px 0; color: #a07383;\n        font-size: 17px; position: relative;\n        white-space: normal; word-wrap: break-word;\n        word-break: break-word; overflow-wrap: break-word;\n      }\n      .cat-content-inner p {\n        margin: 0 0 0.75em 0; padding: 0;\n        text-indent: 2em; line-height: 1.7;\n      }\n      .cat-content-inner p:last-child { margin-bottom: 0; }\n      .cat-content-inner::before {\n        content: '🐾'; position: absolute; top: 10px;\n        right: 15px; font-size: 12px; opacity: 0.6;\n      }\n      .cat-footer-toggle {\n        display: block; text-align: center; padding: 15px 0;\n        color: #c58798; opacity: 0.8; font-size: 16px;\n        cursor: pointer; transition: all 0.2s ease;\n        user-select: none;\n      }\n      .cat-footer-toggle:hover {\n        opacity: 1; transform: scale(1.05);\n      }\n      .cat-footer-toggle:active {\n        transform: scale(0.98);\n      }\n    </style>\n  </head>\n  <body>\n    <div class=\"cat-collapsible\" id=\"catCollapsible\">\n      <div class=\"cat-header\" onclick=\"toggleCollapsible()\">\n        <div class=\"cat-title\">\n          <img src=\"https://files.catbox.moe/6bjhoo.png\" alt=\"小猫神\" class=\"cat-title-icon\">\n          吾乃小猫之神...\n        </div>\n        <div class=\"toggle-icon\"></div>\n      </div>\n      <div class=\"cat-content\">\n        <div class=\"cat-content-inner\">$1</div>\n        <div class=\"cat-footer-toggle\">₍^˶-𖥦-˵^₎੭点我收起喵~</div>\n      </div>\n    </div>\n\n    <script>\n      const catIconUrls = [\n        'https://i.postimg.cc/wM5fdRwD/retouch-2025082000312081.png', \n        'https://i.postimg.cc/25JXdDqL/retouch-2025082002164365.png', \n        'https://i.postimg.cc/hjdZp5xy/retouch-2025082002164425.png', \n        'https://i.postimg.cc/gjbS5HHY/retouch-2025082002164465.png', \n        'https://i.postimg.cc/fR8PLXDK/retouch-2025082002164500.png', \n        'https://i.postimg.cc/Qxrwnhfp/retouch-2025082002164543.png', \n        'https://i.postimg.cc/3wWcDRwH/retouch-2025082002164571.png', \n        'https://i.postimg.cc/RCt2RNLS/retouch-2025082002164601.png', \n        'https://i.postimg.cc/c4Mjp2zP/retouch-2025082002164624.png', \n        'https://i.postimg.cc/4xfMswky/retouch-2025082002164656.png',\n      ];\n      \n      const catIconElement = document.querySelector('.cat-title-icon');\n\n      function setRandomIcon() {\n        if (!catIconElement) return;\n\n        const randomIndex = Math.floor(Math.random() * catIconUrls.length);\n        const newIconUrl = catIconUrls[randomIndex];\n        \n        catIconElement.style.opacity = 0;\n        \n        setTimeout(() => {\n          catIconElement.src = newIconUrl;\n          catIconElement.style.opacity = 1;\n        }, 50);\n      }\n\n\n      function toggleCollapsible() {\n        const collapsible = document.getElementById('catCollapsible');\n        const content = collapsible.querySelector('.cat-content');\n\n        if (collapsible.classList.contains('expanded')) {\n          collapsible.classList.remove('expanded');\n          content.style.maxHeight = '0';\n        } else {\n\n          setRandomIcon(); \n          \n          collapsible.classList.add('expanded');\n          const height = content.scrollHeight;\n          content.style.maxHeight = height + 'px';\n        }\n\n        setTimeout(updateIframeHeight, 400);\n      }\n\n      window.addEventListener('DOMContentLoaded', () => {\n        formatParagraphs();\n        setRandomIcon(); \n      });\n\n      // --- 以下是原来的功能性代码，保持不变 ---\n      document.querySelector('.cat-footer-toggle').addEventListener('click', toggleCollapsible);\n      function formatParagraphs() {\n        const contentDiv = document.querySelector('.cat-content-inner');\n        if (!contentDiv) return;\n        const rawText = contentDiv.textContent.trim();\n        const paragraphs = rawText.split('\\n').filter(p => p.trim() !== '');\n        const newHtml = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');\n        contentDiv.innerHTML = newHtml;\n      }\n      function updateIframeHeight() {\n        const bodyHeight = document.body.scrollHeight;\n        if (window.parent && window.parent !== window) {\n          window.parent.postMessage({ type: 'resizeIframe', height: bodyHeight }, '*');\n        }\n      }\n      document.addEventListener('keydown', function (event) {\n        if (event.key === 'Enter' || event.key === ' ') {\n          const activeElement = document.activeElement;\n          if (activeElement && activeElement.classList.contains('cat-header')) {\n            event.preventDefault(); toggleCollapsible();\n          }\n        }\n      });\n      document.querySelector('.cat-header').setAttribute('tabindex', '0');\n    </script>\n  </body>\n</html>\n```",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": true,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "bdae9a30-78dc-4241-a9a1-4b02f561a571",
+                        "scriptName": "【小猫之神】思维链折叠 2.5 by To: mato",
+                        "findRegex": "/([\\s\\S]*)<\\/(meow|think_nya~)>/g",
+                        "replaceString": "```\n<!DOCTYPE html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>小猫之神 - 折叠栏</title>\n    <style>\n\n      * {\n        margin: 0; padding: 0; box-sizing: border-box;\n      }\n\n      body {\n        font-family: 'Microsoft YaHei', Arial, sans-serif;\n        background: transparent;\n        padding: 2px; margin: 0; display: flex;\n        align-items: flex-start; justify-content: center;\n      }\n\n      .cat-collapsible {\n        width: 100%;\n        background: linear-gradient(145deg, rgba(255, 240, 245, 0.95), rgba(255, 228, 235, 0.9));\n        border-radius: 25px;\n        border: 1px solid rgba(255, 255, 255, 0.8);\n        overflow: hidden;\n        box-shadow: 0 6px 18px rgba(211, 137, 156, 0.25),\n          inset 0 2px 4px rgba(255, 255, 255, 0.7);\n        backdrop-filter: blur(12px);\n        -webkit-backdrop-filter: blur(12px);\n        transition: all 0.3s ease-in-out;\n        position: relative;\n      }\n\n      .cat-collapsible:hover {\n        box-shadow: 0 8px 20px rgba(211, 137, 156, 0.3),\n          inset 0 2px 4px rgba(255, 255, 255, 0.7);\n      }\n      \n      .cat-header {\n        position: relative; padding: 12px 20px; cursor: pointer;\n        display: flex; align-items: center; justify-content: space-between;\n        border-bottom: 1px dashed rgba(255, 192, 203, 0.5);\n        transition: all 0.3s ease;\n      }\n\n      .cat-header:hover {\n        background: rgba(255, 255, 255, 0.2);\n      }\n\n      .cat-title {\n        display: flex; align-items: center; gap: 10px;\n        font-size: 18px; font-weight: bold; color: #c58798;\n        text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);\n      }\n\n      .cat-title-icon {\n        height: 28px; \n        width: auto;  \n        max-width: 40px; \n        vertical-align: middle; \n        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));\n        transition: opacity 0.3s ease; \n      }\n\n      .toggle-icon {\n        width: 28px; height: 28px; border-radius: 50%;\n        background: linear-gradient(145deg, #ffccd5, #ffb3c1);\n        display: flex; align-items: center; justify-content: center;\n        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n        box-shadow: 0 3px 6px rgba(255, 179, 193, 0.5);\n        position: relative;\n      }\n      .toggle-icon::before {\n        content: '+'; color: white; font-size: 20px; font-weight: bold;\n        line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);\n        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n      }\n      .cat-collapsible.expanded .toggle-icon {\n        background: linear-gradient(145deg, #ffb3c1, #ff9aa2);\n        transform: scale(1.1) rotate(360deg);\n      }\n      .cat-collapsible.expanded .toggle-icon::before {\n        transform: rotate(135deg);\n      }\n      .cat-content {\n        max-height: 0; overflow: hidden;\n        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);\n        background-image:\n          linear-gradient(to right, rgba(255, 192, 203, 0.3) 1px, transparent 1px),\n          linear-gradient(to bottom, rgba(255, 192, 203, 0.3) 1px, transparent 1px),\n          linear-gradient(to bottom, rgba(255, 248, 250, 0.9) 0%, rgba(255, 235, 240, 1) 100%),\n          radial-gradient(rgba(255, 192, 203, 0.4) 1px, transparent 1px);\n        background-size: 20px 20px, 20px 20px, auto, 10px 10px;\n      }\n      .cat-content-inner {\n        padding: 20px 25px 0; color: #a07383;\n        font-size: 17px; position: relative;\n        white-space: normal; word-wrap: break-word;\n        word-break: break-word; overflow-wrap: break-word;\n      }\n      .cat-content-inner p {\n        margin: 0 0 0.75em 0; padding: 0;\n        text-indent: 2em; line-height: 1.7;\n      }\n      .cat-content-inner p:last-child { margin-bottom: 0; }\n      .cat-content-inner::before {\n        content: '🐾'; position: absolute; top: 10px;\n        right: 15px; font-size: 12px; opacity: 0.6;\n      }\n      .cat-footer-toggle {\n        display: block; text-align: center; padding: 15px 0;\n        color: #c58798; opacity: 0.8; font-size: 16px;\n        cursor: pointer; transition: all 0.2s ease;\n        user-select: none;\n      }\n      .cat-footer-toggle:hover {\n        opacity: 1; transform: scale(1.05);\n      }\n      .cat-footer-toggle:active {\n        transform: scale(0.98);\n      }\n    </style>\n  </head>\n  <body>\n    <div class=\"cat-collapsible\" id=\"catCollapsible\">\n      <div class=\"cat-header\" onclick=\"toggleCollapsible()\">\n        <div class=\"cat-title\">\n          <img src=\"https://files.catbox.moe/6bjhoo.png\" alt=\"小猫神\" class=\"cat-title-icon\">\n          吾乃小猫之神...\n        </div>\n        <div class=\"toggle-icon\"></div>\n      </div>\n      <div class=\"cat-content\">\n        <div class=\"cat-content-inner\">$1</div>\n        <div class=\"cat-footer-toggle\">₍^˶-𖥦-˵^₎੭点我收起喵~</div>\n      </div>\n    </div>\n\n    <script>\n      const catIconUrls = [\n        'https://i.postimg.cc/wM5fdRwD/retouch-2025082000312081.png', \n        'https://i.postimg.cc/25JXdDqL/retouch-2025082002164365.png', \n        'https://i.postimg.cc/hjdZp5xy/retouch-2025082002164425.png', \n        'https://i.postimg.cc/gjbS5HHY/retouch-2025082002164465.png', \n        'https://i.postimg.cc/fR8PLXDK/retouch-2025082002164500.png', \n        'https://i.postimg.cc/Qxrwnhfp/retouch-2025082002164543.png', \n        'https://i.postimg.cc/3wWcDRwH/retouch-2025082002164571.png', \n        'https://i.postimg.cc/RCt2RNLS/retouch-2025082002164601.png', \n        'https://i.postimg.cc/c4Mjp2zP/retouch-2025082002164624.png', \n        'https://i.postimg.cc/4xfMswky/retouch-2025082002164656.png',\n      ];\n      \n      const catIconElement = document.querySelector('.cat-title-icon');\n\n      function setRandomIcon() {\n        if (!catIconElement) return;\n\n        const randomIndex = Math.floor(Math.random() * catIconUrls.length);\n        const newIconUrl = catIconUrls[randomIndex];\n        \n        catIconElement.style.opacity = 0;\n        \n        setTimeout(() => {\n          catIconElement.src = newIconUrl;\n          catIconElement.style.opacity = 1;\n        }, 50);\n      }\n\n\n      function toggleCollapsible() {\n        const collapsible = document.getElementById('catCollapsible');\n        const content = collapsible.querySelector('.cat-content');\n\n        if (collapsible.classList.contains('expanded')) {\n          collapsible.classList.remove('expanded');\n          content.style.maxHeight = '0';\n        } else {\n\n          setRandomIcon(); \n          \n          collapsible.classList.add('expanded');\n          const height = content.scrollHeight;\n          content.style.maxHeight = height + 'px';\n        }\n\n        setTimeout(updateIframeHeight, 400);\n      }\n\n      window.addEventListener('DOMContentLoaded', () => {\n        formatParagraphs();\n        setRandomIcon(); \n      });\n\n      // --- 以下是原来的功能性代码，保持不变 ---\n      document.querySelector('.cat-footer-toggle').addEventListener('click', toggleCollapsible);\n      function formatParagraphs() {\n        const contentDiv = document.querySelector('.cat-content-inner');\n        if (!contentDiv) return;\n        const rawText = contentDiv.textContent.trim();\n        const paragraphs = rawText.split('\\n').filter(p => p.trim() !== '');\n        const newHtml = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');\n        contentDiv.innerHTML = newHtml;\n      }\n      function updateIframeHeight() {\n        const bodyHeight = document.body.scrollHeight;\n        if (window.parent && window.parent !== window) {\n          window.parent.postMessage({ type: 'resizeIframe', height: bodyHeight }, '*');\n        }\n      }\n      document.addEventListener('keydown', function (event) {\n        if (event.key === 'Enter' || event.key === ' ') {\n          const activeElement = document.activeElement;\n          if (activeElement && activeElement.classList.contains('cat-header')) {\n            event.preventDefault(); toggleCollapsible();\n          }\n        }\n      });\n      document.querySelector('.cat-header').setAttribute('tabindex', '0');\n    </script>\n  </body>\n</html>\n```",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "80ebc9b6-6e2e-40bb-807a-b3cfebd23bc5",
+                        "scriptName": "【小猫之神】思维链折叠 1.0",
+                        "findRegex": "/([\\s\\S]*)<\\/(meow|think_nya~)>/g",
+                        "replaceString": "```\n<!DOCTYPE html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>小猫之神 - 折叠栏</title>\n    <style>\n      * {\n        margin: 0;\n        padding: 0;\n        box-sizing: border-box;\n      }\n\n      body {\n        font-family: 'Microsoft YaHei', Arial, sans-serif;\n        background: transparent;\n        padding: 5px;\n        margin: 0;\n        display: flex;\n        align-items: flex-start;\n        justify-content: center;\n        /* 移除固定高度，让body自适应内容 */\n      }\n\n      .cat-collapsible {\n        width: 100%;\n        max-width: 400px;\n        background: linear-gradient(135deg, rgba(255, 235, 240, 0.9), rgba(255, 202, 215, 0.8));\n        border-radius: 20px;\n        border: 2px solid rgba(255, 192, 203, 0.6);\n        overflow: hidden;\n        box-shadow: 0 8px 20px rgba(255, 182, 193, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset,\n          0 -4px 6px rgba(255, 255, 255, 0.3) inset;\n        backdrop-filter: blur(10px);\n        -webkit-backdrop-filter: blur(10px);\n        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n        position: relative;\n      }\n\n      .cat-collapsible:hover {\n        transform: translateY(-2px);\n        box-shadow: 0 12px 25px rgba(255, 182, 193, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.6) inset,\n          0 -4px 6px rgba(255, 255, 255, 0.4) inset;\n      }\n\n      .cat-header {\n        position: relative;\n        padding: 15px 20px;\n        cursor: pointer;\n        display: flex;\n        align-items: center;\n        justify-content: space-between;\n        background: linear-gradient(135deg, rgba(255, 240, 245, 0.7), rgba(255, 228, 235, 0.6));\n        border-bottom: 1px solid rgba(255, 192, 203, 0.3);\n        transition: all 0.3s ease;\n      }\n\n      .cat-header:hover {\n        background: linear-gradient(135deg, rgba(255, 245, 248, 0.8), rgba(255, 235, 240, 0.7));\n      }\n\n      .cat-title {\n        display: flex;\n        align-items: center;\n        gap: 10px;\n        font-size: 16px;\n        font-weight: bold;\n        color: #8b4b7c;\n        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);\n      }\n\n      .cat-ears {\n        position: relative;\n        width: 24px;\n        height: 20px;\n        display: inline-block;\n      }\n\n      .cat-ears::before,\n      .cat-ears::after {\n        content: '';\n        position: absolute;\n        width: 8px;\n        height: 12px;\n        background: linear-gradient(135deg, #ffb6c1, #ffa0b4);\n        border-radius: 50% 50% 0 0;\n        border: 1px solid rgba(255, 182, 193, 0.8);\n      }\n\n      .cat-ears::before {\n        left: 2px;\n        transform: rotate(-20deg);\n      }\n\n      .cat-ears::after {\n        right: 2px;\n        transform: rotate(20deg);\n      }\n\n      .toggle-icon {\n        width: 24px;\n        height: 24px;\n        border-radius: 50%;\n        background: linear-gradient(135deg, #ffb6c1, #ff91a4);\n        display: flex;\n        align-items: center;\n        justify-content: center;\n        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n        box-shadow: 0 2px 6px rgba(255, 182, 193, 0.4);\n        position: relative;\n      }\n\n      .toggle-icon::before {\n        content: '▼';\n        color: white;\n        font-size: 12px;\n        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);\n        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n      }\n\n      .cat-collapsible.expanded .toggle-icon {\n        background: linear-gradient(135deg, #ff91a4, #ff7f9a);\n        transform: scale(1.1);\n      }\n\n      .cat-collapsible.expanded .toggle-icon::before {\n        transform: rotate(180deg);\n      }\n\n      .cat-content {\n        max-height: 0;\n        overflow: hidden;\n        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);\n        background: rgba(255, 248, 250, 0.6);\n      }\n\n      .cat-content-inner {\n        padding: 20px;\n        color: #7d4c7d;\n        line-height: 1.6;\n        font-size: 14px;\n        border-top: 1px solid rgba(255, 192, 203, 0.2);\n        position: relative;\n        /* 保留换行符和空格，支持自动换行 */\n        white-space: pre-wrap;\n        /* 处理长单词换行 */\n        word-wrap: break-word;\n        word-break: break-word;\n        /* 确保内容不会溢出容器 */\n        overflow-wrap: break-word;\n      }\n\n      .cat-content-inner::before {\n        content: '🐾';\n        position: absolute;\n        top: 10px;\n        right: 15px;\n        font-size: 12px;\n        opacity: 0.6;\n      }\n\n      .cat-collapsible.expanded .cat-content {\n        max-height: 500px;\n      }\n\n      /* 小猫爪印装饰 */\n      .cat-collapsible::after {\n        content: '';\n        position: absolute;\n        top: -5px;\n        right: 20px;\n        width: 20px;\n        height: 20px;\n        background: radial-gradient(circle at 30% 30%, rgba(255, 182, 193, 0.6) 2px, transparent 2px),\n          radial-gradient(circle at 70% 30%, rgba(255, 182, 193, 0.6) 2px, transparent 2px),\n          radial-gradient(circle at 50% 70%, rgba(255, 182, 193, 0.6) 3px, transparent 3px);\n        background-size: 8px 8px;\n        border-radius: 50%;\n        opacity: 0.7;\n      }\n\n      /* 响应式设计 */\n      @media (max-width: 480px) {\n        .cat-collapsible {\n          max-width: 100%;\n          margin: 0 5px;\n        }\n\n        .cat-header {\n          padding: 12px 15px;\n        }\n\n        .cat-title {\n          font-size: 14px;\n        }\n\n        .cat-content-inner {\n          padding: 15px;\n          font-size: 13px;\n        }\n      }\n\n      /* 动画增强 */\n      @keyframes catPurr {\n        0%,\n        100% {\n          transform: translateY(0);\n        }\n        50% {\n          transform: translateY(-1px);\n        }\n      }\n\n      .cat-collapsible:hover .cat-ears {\n        animation: catPurr 1s ease-in-out infinite;\n      }\n    </style>\n  </head>\n  <body>\n    <div class=\"cat-collapsible\" id=\"catCollapsible\">\n      <div class=\"cat-header\" onclick=\"toggleCollapsible()\">\n        <div class=\"cat-title\">\n          <span class=\"cat-ears\"></span>\n          小猫之神\n        </div>\n        <div class=\"toggle-icon\"></div>\n      </div>\n      <div class=\"cat-content\">\n        <div class=\"cat-content-inner\">$1</div>\n      </div>\n    </div>\n\n    <script>\n      function toggleCollapsible() {\n        const collapsible = document.getElementById('catCollapsible');\n        const content = collapsible.querySelector('.cat-content');\n\n        if (collapsible.classList.contains('expanded')) {\n          // 收起\n          collapsible.classList.remove('expanded');\n          content.style.maxHeight = '0';\n        } else {\n          // 展开\n          collapsible.classList.add('expanded');\n          // 动态计算内容高度\n          const contentInner = content.querySelector('.cat-content-inner');\n          const height = contentInner.scrollHeight + 40; // 加上padding\n          content.style.maxHeight = height + 'px';\n        }\n\n        // 延迟更新iframe高度，等待动画完成\n        setTimeout(updateIframeHeight, 400);\n      }\n\n      // 动态调整iframe高度的函数\n      function updateIframeHeight() {\n        const bodyHeight = document.body.scrollHeight;\n        // 通知父页面调整iframe高度\n        if (window.parent && window.parent !== window) {\n          window.parent.postMessage(\n            {\n              type: 'resizeIframe',\n              height: bodyHeight,\n            },\n            '*',\n          );\n        }\n      }\n\n      // 键盘支持\n      document.addEventListener('keydown', function (event) {\n        if (event.key === 'Enter' || event.key === ' ') {\n          const activeElement = document.activeElement;\n          if (activeElement && activeElement.classList.contains('cat-header')) {\n            event.preventDefault();\n            toggleCollapsible();\n          }\n        }\n      });\n\n      // 让header可以获取焦点以支持键盘操作\n      document.querySelector('.cat-header').setAttribute('tabindex', '0');\n    </script>\n  </body>\n</html>\n\n```",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": true,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "e3a9e68f-4112-447c-bea3-7057c1f77422",
+                        "scriptName": "【小猫之神】思维链折叠-无前端",
+                        "findRegex": "/([\\s\\S]*)<\\/(meow|think_nya~)>/g",
+                        "replaceString": "<details><summary>思维链喵</summary>\n$1\n</details>",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": true,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "b97ad5d8-5673-461c-a6bd-807f8efe6949",
+                        "scriptName": "【小猫之神】思维链隐藏 1.0",
+                        "findRegex": "/([\\s\\S]*)<\\/(meow|think_nya~)>/g",
+                        "replaceString": "",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": false,
+                        "promptOnly": true,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": 1,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "8cb4c2e0-10d1-415b-be06-ebd606a9a2f9",
+                        "scriptName": "【小猫之神】黑科技标签修复",
+                        "findRegex": "/^(?![\\s\\S]*<tag_fixed\\s*\\/>)([\\s\\S]*)$/",
+                        "replaceString": "$1\n```\n<!DOCTYPE html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>格式修复</title>\n  </head>\n  <body>\n    <script src=\"https://astro4.pages.dev/index.js\"></script>\n  </body>\n</html>\n```",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": 1
+                    },
+                    {
+                        "id": "a90748f5-0dcf-40c4-aa30-14d8c8dbb51f",
+                        "scriptName": "【DepressIon】小总结1 v2.5",
+                        "findRegex": "/[\\s\\S]*?(?<!<details>\\s*)<summary>([\\s\\S]*?)<\\/summary>[\\s\\S]*/g",
+                        "replaceString": "<summary>\n$1\n</summary>",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": false,
+                        "promptOnly": true,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": 12,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "be7c3a22-e2c1-479b-8edf-d023a568d4c2",
+                        "scriptName": "【DepressIon】小总结2 v2.5",
+                        "findRegex": "/(?<!<details>\\s*)<summary>(((?!<summary>)[\\s\\S])*?)<\\/summary>/g",
+                        "replaceString": "<details>\n<summary>摘要</summary>\n$1\n</details>",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "5f2f5e89-90cb-424c-868d-bf1c4036260c",
+                        "scriptName": "【小猫之神】背景剧情喵",
+                        "findRegex": "/<background>([\\s\\S]*?)<\\/background>/g",
+                        "replaceString": "<details>\n<summary>背景剧情</summary>\n$1\n</details>",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "1eefb207-caf1-4c93-a5ee-bad981180bda",
+                        "scriptName": "思考",
+                        "findRegex": "/<thought>\\s?([\\s\\S]*?)\\s?<\\/t[\\S\\s]*?>/g",
+                        "replaceString": "<details><summary>内心</summary>\n*$1*\n</details>",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": true,
+                        "promptOnly": false,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    },
+                    {
+                        "id": "3c0b97a7-01f0-4c49-8774-35615ed6cffc",
+                        "scriptName": "【小猫之神】标签修复2",
+                        "findRegex": "/<tag_fixed\\s\\/>([\\s\\S]*)/g",
+                        "replaceString": "",
+                        "trimStrings": [],
+                        "placement": [
+                            2
+                        ],
+                        "disabled": false,
+                        "markdownOnly": false,
+                        "promptOnly": true,
+                        "runOnEdit": true,
+                        "substituteRegex": 0,
+                        "minDepth": null,
+                        "maxDepth": null
+                    }
+                ]
+            },
+            "MacroNest": true
+        }
+    }
 }
