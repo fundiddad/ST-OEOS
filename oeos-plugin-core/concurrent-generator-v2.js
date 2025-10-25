@@ -13,9 +13,10 @@
  */
 
 import { getContext } from '../../../../scripts/extensions.js';
-import { chat, saveChat, characters, this_chid, eventSource, event_types, getRequestHeaders } from '../../../../script.js';
+import { chat, saveChat, characters, this_chid, eventSource, event_types, getRequestHeaders, substituteParams } from '../../../../script.js';
 import { getEventSourceStream } from '../../../sse-stream.js';
 import { chat_completion_sources, oai_settings, getStreamingReply } from '../../../openai.js';
+import { power_user } from '../../../../scripts/power-user.js';
 
 
 /**
@@ -174,10 +175,9 @@ export class ConcurrentGeneratorV2 {
 
     /**
      * 构建API请求数据（使用LittleWhiteBox的方式：dryRun=true + 手动构建配置）
-     * @param {string} prompt - 提示词
      * @returns {Promise<object>} API请求数据
      */
-    async buildAPIRequest(prompt) {
+    async buildAPIRequest() {
         const context = getContext();
         let capturedData = null;
 
@@ -192,8 +192,9 @@ export class ConcurrentGeneratorV2 {
 
         try {
             // ✅ 使用dryRun=true获取消息数组（不触发UI状态）
+            // ⚠️ 不传入quiet_prompt，让ST从chat数组中读取最后一条消息
+            // 这样{{lastUserMessage}}宏会被正确替换为我们刚添加的用户消息
             await context.generate('normal', {
-                quiet_prompt: prompt,
                 quietToLoud: false,
                 skipWIAN: false, // 包含World Info
                 force_name2: true
@@ -227,6 +228,47 @@ export class ConcurrentGeneratorV2 {
         });
 
         return requestBody;
+    }
+
+    /**
+     * 构建stop参数（从power_user.custom_stopping_strings读取）
+     * @param {object} capturedData - 捕获的数据
+     * @returns {Array|undefined} stop字符串数组或undefined
+     */
+    _buildStopStrings(capturedData) {
+        // 优先使用capturedData中的stop参数（如果存在且有效）
+        if (capturedData?.stop && Array.isArray(capturedData.stop) && capturedData.stop.length > 0) {
+            return capturedData.stop;
+        }
+
+        // 从power_user.custom_stopping_strings读取
+        try {
+            // 如果没有自定义停止字符串，返回undefined
+            if (!power_user.custom_stopping_strings) {
+                return undefined;
+            }
+
+            // 解析JSON字符串
+            let strings = JSON.parse(power_user.custom_stopping_strings);
+
+            // 确保是数组
+            if (!Array.isArray(strings)) {
+                return undefined;
+            }
+
+            // 过滤掉非字符串和空字符串
+            strings = strings.filter(s => typeof s === 'string' && s.length > 0);
+
+            // 如果启用了宏替换，则替换参数
+            if (power_user.custom_stopping_strings_macro) {
+                strings = strings.map(x => substituteParams(x));
+            }
+
+            return strings.length > 0 ? strings : undefined;
+        } catch (error) {
+            console.warn('[OEOS-ConcurrentV2] 解析custom_stopping_strings失败:', error);
+            return undefined;
+        }
     }
 
     /**
@@ -303,7 +345,7 @@ export class ConcurrentGeneratorV2 {
             frequency_penalty,
             top_p,
             max_tokens,
-            stop: capturedData?.stop || undefined,
+            stop: this._buildStopStrings(capturedData),
         };
 
         // Gemini特殊处理
@@ -465,8 +507,8 @@ export class ConcurrentGeneratorV2 {
             // 3. 刷新UI显示用户消息
             await this.refreshChatUI();
 
-            // 4. 构建API请求
-            const requestData = await this.buildAPIRequest(prompt);
+            // 4. 构建API请求（从chat数组中读取，这样{{lastUserMessage}}会被正确替换）
+            const requestData = await this.buildAPIRequest();
 
             // 5. 调用API生成
             const generator = this.callAPI(requestData, session.abortController.signal);
