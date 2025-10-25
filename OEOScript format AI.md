@@ -8,22 +8,22 @@ This document provides a comprehensive and definitive reference for the OEOScrip
 
 1.  **File Structure**: A script is a collection of Pages. Multiple pages can be defined in a single script, separated by `---`.
 2.  **Page Definition**: Each page begins with `>` followed by a unique `pageId` and ends with `---`.
-    ```
-    > start
-      say "欢迎来到冒险世界！"
-      choice:
-        - "进入森林":
-          - goto: forest
-        - "访问村庄":
-          - goto: village
-    ---
-    > forest
-      say "你进入了茂密的森林..."
-      choice:
-        - "继续探索":
-          - goto: deep_forest
-    ---
-    ```
+```
+> crossroads
+  say "你走到了一个十字路口。"
+  choice
+    "向左走"
+      say "你选择了左边的路。"
+      goto forest_path
+    "向右走" when: $storage.get('hasMap') == true color: "blue"
+      say "你看着地图，选择了右边。"
+      goto city_path
+    "查看状态" keep: true
+      say "你的生命值是 <eval>storage.get('hp')</eval>"
+    "原地等待" -> goto waiting_event
+---
+```
+ 
 3.  **Indentation**:
     *   **Rule**: Use exactly **2 spaces** for each level of indentation.
     *   **Prohibition**: Do NOT use Tab characters.

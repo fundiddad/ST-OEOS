@@ -353,7 +353,7 @@ export class ConcurrentGeneratorV2 {
      * @returns {AsyncGenerator<string>} 生成的文本流
      */
     async* callAPI(requestData, abortSignal) {
-        console.log('[OEOS-ConcurrentV2] 发送API请求:', {
+        console.groupCollapsed('[OEOS-ConcurrentV2] 发送API请求:', {
             url: '/api/backends/chat-completions/generate',
             method: 'POST',
             model: requestData.model,
@@ -363,8 +363,8 @@ export class ConcurrentGeneratorV2 {
             max_tokens: requestData.max_tokens,
             chat_completion_source: requestData.chat_completion_source
         });
-
-        console.log('[OEOS-ConcurrentV2] 完整请求体:', JSON.stringify(requestData, null, 2));
+        console.log('完整请求体:', JSON.stringify(requestData, null, 2));
+        console.groupEnd();
 
         const response = await fetch('/api/backends/chat-completions/generate', {
             method: 'POST',
