@@ -136,7 +136,18 @@ async function getPage(pageId) {
         if (match) {
             // 返回页面内容，包含 "> pageId" 行
             // 注意：不能使用 trim()，否则会去掉首行缩进，导致解析器计算缩进错误
-            const pageBody = match[1].replace(/\s+$/,''); // 仅去掉末尾多余空白，保留行首空格
+            let pageBody = match[1].replace(/\s+$/,''); // 仅去掉末尾多余空白，保留行首空格
+
+            // 添加调试日志：检查是否有双重转义
+            const hasDoubleEscape = /\\\\["\n]/.test(pageBody);
+            if (hasDoubleEscape) {
+                console.warn('[OEOS] 检测到双重转义，尝试修复...');
+                console.log('[OEOS] 原始内容（前100字符）:', pageBody.substring(0, 100));
+                // 不进行自动修复，而是提示用户
+                console.warn('[OEOS] 请检查 World Info 中的内容是否被错误地双重转义了');
+                console.warn('[OEOS] 例如：\\" 应该是 \\"，而不是 \\\\"');
+            }
+
             return `> ${pageId}\n${pageBody}`;
         }
 

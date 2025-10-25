@@ -1,11 +1,11 @@
 class OEOSV4Parser {
   static toV1(v4Script) {
-    console.log('[V4 Parser] ========== 开始解析 V4 脚本 ==========');
-    console.log(`[V4 Parser] 脚本长度: ${v4Script.length} 字符`);
-    console.log(`[V4 Parser] 脚本前 300 字符:\n${v4Script.substring(0, 300)}`);
+    // console.log('[V4 Parser] ========== 开始解析 V4 脚本 ==========');
+    // console.log(`[V4 Parser] 脚本长度: ${v4Script.length} 字符`);
+    // console.log(`[V4 Parser] 脚本前 300 字符:\n${v4Script.substring(0, 300)}`);
 
     const lines = v4Script.split('\n')
-    console.log(`[V4 Parser] 总行数: ${lines.length}`);
+    // console.log(`[V4 Parser] 总行数: ${lines.length}`);
 
     const v1Data = { pages: {} }
     const contextStack = []
@@ -159,14 +159,14 @@ class OEOSV4Parser {
       }
     }
 
-    console.log(`[V4 Parser] ✓ 解析完成，共 ${Object.keys(v1Data.pages).length} 个页面`);
-    console.log(`[V4 Parser] 页面列表:`, Object.keys(v1Data.pages));
+    // console.log(`[V4 Parser] ✓ 解析完成，共 ${Object.keys(v1Data.pages).length} 个页面`);
+    // console.log(`[V4 Parser] 页面列表:`, Object.keys(v1Data.pages));
 
     this.cleanup(v1Data)
 
-    console.log('[V4 Parser] ✓ 清理完成');
-    console.log('[V4 Parser] 最终结果:', v1Data);
-    console.log('[V4 Parser] ========== V4 脚本解析完成 ==========');
+    // console.log('[V4 Parser] ✓ 清理完成');
+    // console.log('[V4 Parser] 最终结果:', v1Data);
+    // console.log('[V4 Parser] ========== V4 脚本解析完成 ==========');
 
     return v1Data
   }

@@ -451,6 +451,14 @@ function buildExpression(exp, type) {
 // (Further xss filtering comes at run time/render with markupFilter)
 function parseHtmlToJS(string) {
   if (typeof string !== 'string') return JSON.stringify('')
+
+  // 检查字符串是否包含 HTML 标签或 <eval> 标签
+  // 如果不包含，直接返回 JSON.stringify(string)，避免 DOMParser 对特殊字符的处理
+  const hasHtmlTags = /<[^>]+>/.test(string)
+  if (!hasHtmlTags) {
+    return JSON.stringify(string)
+  }
+
   const result = []
   const doc = parser
     .parseFromString(string, 'text/html')
