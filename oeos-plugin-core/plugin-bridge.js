@@ -135,7 +135,9 @@ async function getPage(pageId) {
 
         if (match) {
             // 返回页面内容，包含 "> pageId" 行
-            return `> ${pageId}\n${match[1].trim()}`;
+            // 注意：不能使用 trim()，否则会去掉首行缩进，导致解析器计算缩进错误
+            const pageBody = match[1].replace(/\s+$/,''); // 仅去掉末尾多余空白，保留行首空格
+            return `> ${pageId}\n${pageBody}`;
         }
 
         // 页面未找到，返回占位符页面

@@ -86,9 +86,24 @@ export function injectAndSetupSwapper() {
 
             if (!isAppLoaded) {
                 console.log(`${extensionName}: First open, loading Vue app...`);
-                loadScript(`${extensionUrl}/js/app.js`).catch(err => {
-                    console.error(`${extensionName}: Vue app failed to load.`, err);
-                });
+                // 暂时屏蔽全局 window.Vue，避免第三方库基于 window.Vue 的自动安装逻辑
+                const __oeos_prev_global_vue__ = window.Vue;
+                try {
+                    window.Vue = undefined;
+                } catch (e) {
+                    // 某些环境下 window.Vue 可能是只读，忽略
+                }
+
+                loadScript(`${extensionUrl}/js/app.js`)
+                    .catch(err => {
+                        console.error(`${extensionName}: Vue app failed to load.`, err);
+                    })
+                    .finally(() => {
+                        // 还原原始的全局 Vue 引用（如果有）
+                        try {
+                            window.Vue = __oeos_prev_global_vue__;
+                        } catch (e) {}
+                    });
                 isAppLoaded = true;
             }
         }

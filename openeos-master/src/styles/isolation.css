@@ -45,4 +45,3 @@ button:not(#oeos-main-container button):not(.interactable) {
   font-size: 15px !important;
   font-family: var(--mainFontFamily, 'Noto Sans', sans-serif) !important;
 }
-
