@@ -252,7 +252,7 @@ export class ConcurrentGenerator {
      */
     async generatePage(slotId, pageId) {
         const sessionId = this._getSlotId(slotId);
-        const prompt = `goto: ${pageId}`;
+        const prompt = `${pageId}`;
 
         console.log(`[ConcurrentGen] 开始生成页面: ${pageId} (槽位: ${sessionId})`);
 
