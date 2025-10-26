@@ -45,7 +45,8 @@ export class ElementDataManager {
             while ((block = PAGES_BLOCK_RE.exec(msg.mes)) !== null) {
                 const blockContent = block[1];
                 // Split by --- separator first, then parse each page
-                const pages = blockContent.split(/\n---\n/);
+                // 修复：支持 \r\n 和 \n 两种换行符
+                const pages = blockContent.split(/\r?\n---\r?\n/);
                 for (const page of pages) {
                     const trimmedPage = page.trim();
                     if (!trimmedPage) continue;
@@ -342,7 +343,8 @@ export class ElementDataManager {
     _deserializePages(text) {
         this.pages.clear();
         const content = String(text || '');
-        const pages = content.split(/\n---\n/);
+        // 修复：支持 \r\n 和 \n 两种换行符
+        const pages = content.split(/\r?\n---\r?\n/);
         const pageHeaderRe = /^>\s*(\w+)\s*\r?\n([\s\S]*)$/;
 
         for (const page of pages) {
