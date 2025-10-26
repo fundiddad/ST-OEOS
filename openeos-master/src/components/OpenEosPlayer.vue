@@ -632,9 +632,14 @@ export default {
 }
 </script>
 <style>
-html {
+/*
+ * 不要设置全局 html 的 overflow，这会影响 SillyTavern 的弹窗定位
+ * 改为只在 OEOS 容器内设置 overflow
+ */
+#oeos-main-container {
   overflow: hidden;
 }
+
 .oeos-start-prompt,
 .oeos-outer {
   height: 100%;

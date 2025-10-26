@@ -15,9 +15,56 @@
   font-family: 'Roboto', sans-serif;
 }
 
-/* 防止 Vuetify 的全局样式泄漏到 SillyTavern */
+/*
+ * 防止 Vuetify 的全局样式泄漏到 SillyTavern
+ * 注意：不能使用 all: unset，因为这会破坏 SillyTavern 弹窗的定位
+ * 只重置可能影响布局的关键属性
+ */
 .v-application:not(#oeos-main-container .v-application) {
-  all: unset !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/*
+ * 防止 Vuetify 的暗色主题影响 SillyTavern 的弹窗
+ * Vuetify 会在 html/body 上添加 .theme--dark 类，导致弹窗内的文本颜色变浅
+ *
+ * 策略：强制恢复 SillyTavern 弹窗的原始颜色变量
+ */
+
+/* 重置弹窗的颜色，使用 SillyTavern 的主题变量 */
+dialog:not(.v-dialog),
+.popup {
+  color: var(--SmartThemeBodyColor) !important;
+  background-color: var(--SmartThemeBlurTintColor) !important;
+}
+
+/* 重置弹窗内所有元素的颜色，不受 Vuetify 主题影响 */
+dialog:not(.v-dialog) *,
+.popup * {
+  /* 使用 unset 而不是 inherit，让元素使用自己的默认颜色 */
+  color: unset !important;
+}
+
+/* 特别保护 textarea 和 input 的颜色 */
+dialog:not(.v-dialog) textarea,
+dialog:not(.v-dialog) input,
+.popup textarea,
+.popup input {
+  color: var(--SmartThemeBodyColor) !important;
+  background-color: var(--black30a) !important;
+}
+
+/*
+ * 防止 Vuetify 的全局 box-sizing 影响 SillyTavern
+ * Vuetify 默认会设置 *, *::before, *::after { box-sizing: border-box }
+ */
+dialog:not(.v-dialog),
+dialog:not(.v-dialog) *,
+.popup,
+.popup * {
+  box-sizing: border-box !important;
 }
 
 /* 强制重置 SillyTavern 元素的字体大小，防止被 Vuetify 影响 */
@@ -39,9 +86,116 @@ button:not(#oeos-main-container button):not(.interactable) {
   line-height: 1.5 !important;
 }
 
+/* 特别保护弹窗内的 textarea 和 input 元素 */
+dialog:not(.v-dialog) textarea,
+dialog:not(.v-dialog) input,
+.popup textarea,
+.popup input {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  box-sizing: border-box !important;
+  font-family: var(--mainFontFamily, 'Noto Sans', sans-serif) !important;
+}
+
 /* 特别针对发送表单的文本输入样式重置，但不影响图标按钮 */
 #send_form input[type="text"],
 #send_form textarea {
   font-size: 15px !important;
   font-family: var(--mainFontFamily, 'Noto Sans', sans-serif) !important;
+}
+
+/*
+ * 修复 Vuetify 弹窗层级问题
+ * Vuetify 的 v-dialog 和 v-overlay 默认 z-index 很高（200+），
+ * 会覆盖 SillyTavern 的弹窗（如正则表达式编辑器、词符计数器等）
+ *
+ * 解决方案：
+ * 1. 将 OEOS 相关的 Vuetify 弹窗层级降低到 100
+ * 2. 确保 SillyTavern 的弹窗层级在 1000+
+ */
+
+/* 降低 OEOS 容器内的 Vuetify 弹窗层级 */
+#oeos-main-container .v-dialog,
+#oeos-main-container .v-overlay {
+  z-index: 100 !important;
+}
+
+#oeos-main-container .v-dialog__content {
+  z-index: 100 !important;
+}
+
+#oeos-main-container .v-overlay--active {
+  z-index: 100 !important;
+}
+
+/*
+ * 降低所有 Vuetify 弹窗的层级（包括那些被渲染到 body 下的）
+ * 通过 data-app 属性识别 Vuetify 的弹窗
+ */
+.v-dialog:not(#oeos-main-container .v-dialog),
+.v-overlay:not(#oeos-main-container .v-overlay) {
+  z-index: 100 !important;
+}
+
+.v-dialog__content {
+  z-index: 100 !important;
+}
+
+.v-overlay--active {
+  z-index: 100 !important;
+}
+
+/*
+ * 确保 SillyTavern 的弹窗始终在最上层
+ * SillyTavern 的 dialog 元素应该有更高的 z-index
+ */
+body > dialog,
+body > .popup,
+body > ._poly_dialog_overlay,
+dialog:not(.v-dialog),
+.popup {
+  z-index: 1000 !important;
+}
+
+/* 确保 SillyTavern 弹窗的背景遮罩也在正确层级 */
+dialog::backdrop,
+.popup::backdrop {
+  z-index: 999 !important;
+}
+
+/*
+ * 修复弹窗定位问题
+ * 确保 html 和 body 的 overflow 不被 OEOS 影响
+ * 这对于 SillyTavern 弹窗的正确定位至关重要
+ */
+html {
+  overflow: auto !important;
+}
+
+body {
+  overflow: auto !important;
+}
+
+/*
+ * 确保 SillyTavern 的弹窗能够正确居中显示
+ * 不受 Vuetify 或 OEOS 样式的影响
+ */
+dialog:not(.v-dialog),
+.popup {
+  position: fixed !important;
+  margin: auto !important;
+  box-sizing: border-box !important;
+  /* 确保弹窗保持原有宽度，不被 Vuetify 影响 */
+  width: 500px !important;
+  max-width: calc(100dvw - 2em) !important;
+}
+
+/* 确保弹窗背景遮罩覆盖整个视口 */
+dialog::backdrop,
+.popup::backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
 }
