@@ -14,6 +14,7 @@ export class PregenerationSystem {
         this.lastPageId = null;
         this.generationQueue = [];
         this.usedSlots = new Set();
+        this.pageChangeHandler = null;
     }
 
     /**
@@ -25,26 +26,38 @@ export class PregenerationSystem {
     }
 
     /**
-     * 监听页面变更
+     * 监听页面变更（使用事件监听，不使用轮询）
      */
     startPageChangeMonitor() {
-        setInterval(async () => {
+        // 创建事件处理函数
+        this.pageChangeHandler = async (event) => {
             try {
-                const mgr = getManager(this.worldInfoName);
-                // 不需要重新加载，直接读取已有数据
+                const { pageId } = event.detail || {};
 
-                const path = mgr._parseStatePath(mgr.state);
-                const currentPageId = path[path.length - 1];
-                
-                if (currentPageId && currentPageId !== this.lastPageId) {
-                    console.log(`[OEOS-Pregen] 页面变更: ${this.lastPageId} -> ${currentPageId}`);
-                    this.lastPageId = currentPageId;
-                    await this.triggerPregeneration(currentPageId);
+                if (pageId && pageId !== this.lastPageId) {
+                    console.log(`[OEOS-Pregen] 页面变更: ${this.lastPageId} -> ${pageId}`);
+                    this.lastPageId = pageId;
+                    await this.triggerPregeneration(pageId);
                 }
             } catch (error) {
                 console.error('[OEOS-Pregen] 页面监听错误:', error);
             }
-        }, 1000);
+        };
+
+        // 监听自定义事件
+        window.addEventListener('oeos:pageChange', this.pageChangeHandler);
+        console.log('[OEOS-Pregen] 已注册页面变更事件监听器');
+    }
+
+    /**
+     * 停止监听页面变更
+     */
+    stop() {
+        if (this.pageChangeHandler) {
+            window.removeEventListener('oeos:pageChange', this.pageChangeHandler);
+            this.pageChangeHandler = null;
+            console.log('[OEOS-Pregen] 已移除页面变更事件监听器');
+        }
     }
 
     /**

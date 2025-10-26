@@ -272,6 +272,15 @@ async function updateState(newState) {
         mgr.updateState(newState.pageId, newState.variables || {});
         // debounce sync
         mgr.scheduleSync(() => mgr.syncAll());
+
+        // 触发页面变更事件，供预生成系统监听
+        if (newState.pageId) {
+            const event = new CustomEvent('oeos:pageChange', {
+                detail: { pageId: newState.pageId, variables: newState.variables }
+            });
+            window.dispatchEvent(event);
+            console.log(`[OEOS] 触发页面变更事件: ${newState.pageId}`);
+        }
     } catch (error) {
         console.error('[OEOS] 更新状态失败:', error);
         console.error(`[OEOS] 更新状态失败: ${error.message}`);

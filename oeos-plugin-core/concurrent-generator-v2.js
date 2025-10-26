@@ -13,7 +13,7 @@
  */
 
 import { getContext } from '../../../../scripts/extensions.js';
-import { chat, saveChat, characters, this_chid, eventSource, event_types, getRequestHeaders, substituteParams } from '../../../../script.js';
+import { chat, saveChat, characters, this_chid, eventSource, event_types, getRequestHeaders, substituteParams, addOneMessage } from '../../../../script.js';
 import { getEventSourceStream } from '../../../sse-stream.js';
 import { chat_completion_sources, oai_settings, getStreamingReply } from '../../../openai.js';
 import { power_user } from '../../../../scripts/power-user.js';
@@ -507,29 +507,43 @@ export class ConcurrentGeneratorV2 {
             // 2. 添加AI消息槽位
             session.aiMessageIndex = this.addAIMessage();
 
-            // 3. 刷新UI显示用户消息
-            await this.refreshChatUI();
-
-            // 4. 构建API请求（从chat数组中读取，这样{{lastUserMessage}}会被正确替换）
+            // 3. 构建API请求（从chat数组中读取，这样{{lastUserMessage}}会被正确替换）
             const requestData = await this.buildAPIRequest();
 
-            // 5. 调用API生成
+            // 4. 调用API生成
             const generator = this.callAPI(requestData, session.abortController.signal);
 
-            // 6. 处理流式响应
+            // 5. 处理流式响应（不实时更新UI，只累积文本）
             for await (const text of generator) {
                 session.text = text;
-                this.updateAIMessage(session.aiMessageIndex, text);
-                // 每次更新后刷新UI
-                await this.refreshChatUI();
+                // 不实时更新UI，只更新内存中的文本
             }
 
-            // 7. 标记完成
+            // 6. 生成完成后，更新AI消息内容
+            this.updateAIMessage(session.aiMessageIndex, session.text);
+
+            // 7. 渲染消息到UI
+            // 渲染用户消息
+            addOneMessage(chat[session.userMessageIndex], {
+                forceId: session.userMessageIndex,
+                scroll: false
+            });
+            // 渲染AI消息
+            addOneMessage(chat[session.aiMessageIndex], {
+                forceId: session.aiMessageIndex,
+                scroll: true
+            });
+
+            // 8. 标记完成
             session.isStreaming = false;
             session.isCompleted = true;
 
-            // 8. 保存聊天记录
+            // 9. 保存聊天记录
             await this.saveChatHistory();
+
+            // 10. 触发AI回复完成事件，让OEOS的AI回复监听器处理这条消息
+            // 这样页面内容会被提取并保存到World Info
+            await eventSource.emit('chat_completion_stream_finish');
 
             console.log(`[OEOS-ConcurrentV2] 页面 ${pageId} 生成完成，长度: ${session.text.length}`);
 
