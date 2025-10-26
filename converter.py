@@ -247,13 +247,17 @@ class OEOSConverter:
         if cmd_name in ['commands', 'timerCommands']:
              return {cmd_name: {}}, {'sub_block': True}
 
-        if cmd_name in self.V4_SHORTCUT_COMMANDS:
+        # 检查是否使用了命名参数语法（例如 "say label: ..."）
+        # 如果第一个参数是命名参数的键（以冒号结尾），则不应该使用快捷参数语法
+        param_key = self.V4_SHORTCUT_COMMANDS.get(cmd_name)
+        is_named_param_syntax = param_key and args_str.lstrip().startswith(param_key + ':')
+
+        if cmd_name in self.V4_SHORTCUT_COMMANDS and not is_named_param_syntax:
             # More robustly handle quoted strings and the rest of the arguments
             match = re.match(r'(".*?"|\S+)\s*(.*)', args_str)
             if match:
                 value, remaining_args = match.groups()
                 # The shortcut param name is the same as the command name for timer.remove
-                param_key = self.V4_SHORTCUT_COMMANDS.get(cmd_name, cmd_name)
                 params[param_key] = self._parse_value_v1(value)
                 args_str = remaining_args
         named_args = re.findall(r'(\w+):\s*(".*?"|true|false|-?\d+\.?\d*|\$\S+)', args_str)

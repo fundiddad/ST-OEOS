@@ -190,7 +190,12 @@ class OEOSV4Parser {
       'timer.remove': 'id',
     }
 
-    if (shortcutCommands[cmdName]) {
+    // 检查是否使用了命名参数语法（例如 "say label: ..."）
+    // 如果第一个参数是命名参数的键（以冒号结尾），则不应该使用快捷参数语法
+    const isNamedParamSyntax = shortcutCommands[cmdName] &&
+      argsStr.trimStart().startsWith(shortcutCommands[cmdName] + ':')
+
+    if (shortcutCommands[cmdName] && !isNamedParamSyntax) {
       const match = argsStr.match(/^("(?:[^"\\]|\\.)*?"|\S+)\s*(.*)$/s)
       if (match) {
         const value = match[1]
