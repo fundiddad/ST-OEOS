@@ -4,7 +4,8 @@
 import { loadWi, saveWi, getPresetByName, savePresetDirect } from './st-api.js';
 
 // Helpers: regex extractors reused locally
-const PAGES_BLOCK_RE = /<Pages>([\s\S]*?)<\/Pages>/gi;
+// 只匹配 <game><Pages>...</Pages></game> 的完整结构，忽略前面的所有内容（包括思维链标签）
+const PAGES_BLOCK_RE = /<game>\s*<Pages>([\s\S]*?)<\/Pages>\s*<\/game>/gi;
 const PAGE_SPLIT_RE = /^>\s*(\w+)\s*\r?\n([\s\S]*?)(?=\n---\n|$)/gm;
 const SUMMARY_BLOCK_RE = /<summary>([\s\S]*?)<\/summary>/gi;
 
@@ -37,15 +38,21 @@ export class ElementDataManager {
     }
 
     // ----- Extractors from chat -----
+    /**
+     * 从聊天消息中提取 Pages 块
+     * 只匹配 <game><Pages>...</Pages></game> 的完整结构
+     * @param {Array} chatArray - 聊天消息数组
+     * @returns {Array} [{pageId, content}] 页面数组
+     */
     static extractPagesFromChat(chatArray) {
         const result = [];
         for (const msg of chatArray || []) {
             if (!msg?.mes) continue;
+
             let block;
             while ((block = PAGES_BLOCK_RE.exec(msg.mes)) !== null) {
                 const blockContent = block[1];
-                // Split by --- separator first, then parse each page
-                // 修复：支持 \r\n 和 \n 两种换行符
+                // 按 --- 分隔符分割页面，支持 \r\n 和 \n 两种换行符
                 const pages = blockContent.split(/\r?\n---\r?\n/);
                 for (const page of pages) {
                     const trimmedPage = page.trim();
@@ -67,10 +74,16 @@ export class ElementDataManager {
         return result; // [{pageId, content}]
     }
 
+    /**
+     * 从聊天消息中提取 summary 块
+     * @param {Array} chatArray - 聊天消息数组
+     * @returns {Array} [{pageId, abstract}] 摘要数组
+     */
     static extractSummariesFromChat(chatArray) {
         const result = [];
         for (const msg of chatArray || []) {
             if (!msg?.mes) continue;
+
             let block;
             while ((block = SUMMARY_BLOCK_RE.exec(msg.mes)) !== null) {
                 const lines = block[1].trim().split(/\r?\n/);

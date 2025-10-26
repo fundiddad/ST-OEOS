@@ -79,6 +79,7 @@ import { characters, this_chid, chat, eventSource, event_types, getRequestHeader
 
 /**
  * 从角色专属的 World Info 中获取指定页面的 OEOScript 内容
+ * 优先从内存中查找（ElementDataManager），再从 World Info 中查找
  * @param {string} pageId - 页面 ID
  * @returns {Promise<string|null>} - OEOScript 内容或 null（如果未找到）
  */
@@ -97,7 +98,16 @@ async function getPage(pageId) {
             return null;
         }
 
-        // 加载角色专属的 World Info
+        // 1. 优先从内存中查找（ElementDataManager）
+        // 这样新生成的页面可以立即被找到，不需要等待 World Info 同步
+        const mgr = getManager(worldInfoName);
+        const pageContent = mgr.pages.get(pageId);
+        if (pageContent) {
+            console.info(`[OEOS] 页面 '${pageId}' 从内存中找到`);
+            return pageContent;
+        }
+
+        // 2. 从 World Info 中查找（后备方案）
         const worldInfo = await loadWi(worldInfoName);
         if (!worldInfo || !worldInfo.entries) {
             console.warn('[OEOS] World Info 不存在或为空');
@@ -358,8 +368,8 @@ export async function initializeGameDataFromChat(worldInfoName) {
         }
 
         // 提取 AI 输出的 <Pages> 和 <summary> 标签
-        const pages = extractPagesFromChat(chat);
-        const summaries = extractSummaryFromChat(chat);
+        const pages = ElementDataManager.extractPagesFromChat(chat);
+        const summaries = ElementDataManager.extractSummariesFromChat(chat);
 
         if (pages.length === 0 && summaries.length === 0) {
             console.info('[OEOS] 聊天记录中没有找到 OEOS 数据');
@@ -866,10 +876,17 @@ async function initializeGameDataFromChatV2(worldInfoName) {
     }
 }
 
+/**
+ * 从 AI 响应中更新游戏数据
+ * 提取 Pages 和 summary，更新到 ElementDataManager
+ * @param {string} worldInfoName - World Info 名称
+ * @param {string} aiMessage - AI 响应消息
+ */
 async function updateGameDataFromAIResponseV2(worldInfoName, aiMessage) {
     try {
-        const pages = extractPagesFromChat([{ mes: aiMessage }]);
-        const summaries = extractSummaryFromChat([{ mes: aiMessage }]);
+        // 使用 ElementDataManager 的静态方法提取 Pages 和 summary
+        const pages = ElementDataManager.extractPagesFromChat([{ mes: aiMessage }]);
+        const summaries = ElementDataManager.extractSummariesFromChat([{ mes: aiMessage }]);
         if (pages.length === 0 && summaries.length === 0) return;
         const mgr = getManager(worldInfoName);
         // 不需要重新加载，直接更新新页面
