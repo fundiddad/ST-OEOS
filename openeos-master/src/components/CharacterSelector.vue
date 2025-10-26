@@ -5,14 +5,13 @@
         选择角色开始冒险
         <!-- 全局设置按钮 -->
         <v-spacer></v-spacer>
-        <v-btn
-          icon
-          small
+        <div
+          class="drawer-icon fa-solid fa-sliders fa-fw closedIcon interactable"
+          title="AI响应配置"
+          data-i18n="[title]AI Response Configuration"
+          tabindex="0"
           @click="showSettingsDialog = true"
-          title="OEOS全局设置"
-        >
-          <v-icon>mdi-cog</v-icon>
-        </v-btn>
+        ></div>
       </v-card-title>
       <v-card-text>
         <v-progress-circular v-if="loading" indeterminate></v-progress-circular>
@@ -212,7 +211,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 
