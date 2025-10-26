@@ -374,6 +374,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    initialPageId: {
+      type: String,
+      default: 'start',
+    },
   },
   mixins: [
     sanitize,
@@ -617,10 +621,10 @@ export default {
       }
       interpreter.run()
 
-      console.log('Starting tease')
+      console.log(`Starting tease from page: ${this.initialPageId}`)
       this.loading = false
       this.started = true
-      this.showPage('start')
+      this.showPage(this.initialPageId)
       interpreter.run()
       this.scrollToBottom()
     },

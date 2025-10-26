@@ -24,6 +24,7 @@
         :allow-no-sleep="allowNoSleep"
         :preview-mode="previewMode"
         :is-debug="previewMode > 0"
+        :initial-page-id="initialPageId"
         @page-change="pageChange"
         @save-storage="didStorageSave"
         @load-storage="didStorageLoad"
@@ -146,6 +147,7 @@ export default {
     teaseStorage: null,
     debugPrompt: false,
     allowNoSleep: false,
+    initialPageId: 'start',  // 初始页面 ID，从 State 中获取
     message: {
       title: null,
       html: null,
@@ -226,7 +228,10 @@ export default {
         const startPageId = currentState?.pageId || 'start';
         const initialVariables = currentState?.variables || {};
 
-        // console.info(`[OEOS Player] ✓ 从页面 '${startPageId}' 开始游戏，初始变量:`, initialVariables);
+        console.info(`[OEOS Player] ✓ 从页面 '${startPageId}' 开始游戏，初始变量:`, initialVariables);
+
+        // 设置初始页面 ID
+        this.initialPageId = startPageId;
 
         // 读取起始页面
         // console.log(`[OEOS Player] 读取页面 '${startPageId}'...`);
