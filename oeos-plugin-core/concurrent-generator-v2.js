@@ -26,6 +26,7 @@ import { power_user } from '../../../../scripts/power-user.js';
 export class ConcurrentGeneratorV2 {
     constructor() {
         this.sessions = new Map(); // 存储10个槽位的会话
+        this.buildRequestLock = Promise.resolve(); // 互斥锁，确保 buildAPIRequest 串行执行
     }
 
     /**
@@ -176,12 +177,43 @@ export class ConcurrentGeneratorV2 {
 
     /**
      * 构建API请求数据（使用LittleWhiteBox的方式：dryRun=true + 手动构建配置）
-     * @param {string} prompt - 提示词
+     * @param {number} userMessageIndex - 用户消息在chat数组中的索引
      * @returns {Promise<object>} API请求数据
      */
-    async buildAPIRequest() {
+    async buildAPIRequest(userMessageIndex) {
+        // 🔒 使用互斥锁确保同一时间只有一个任务在执行此方法
+        // 这样可以避免多个并发任务同时操作 chat 数组导致的竞态条件
+        const previousLock = this.buildRequestLock;
+        let releaseLock;
+        this.buildRequestLock = new Promise(resolve => {
+            releaseLock = resolve;
+        });
+
+        try {
+            // 等待前一个任务完成
+            await previousLock;
+            return await this._buildAPIRequestInternal(userMessageIndex);
+        } finally {
+            // 释放锁，让下一个任务继续
+            releaseLock();
+        }
+    }
+
+    /**
+     * 内部方法：实际执行API请求构建
+     * @param {number} userMessageIndex - 用户消息在chat数组中的索引
+     * @returns {Promise<object>} API请求数据
+     */
+    async _buildAPIRequestInternal(userMessageIndex) {
         const context = getContext();
         let capturedData = null;
+
+        // 临时移除在userMessageIndex之后添加的所有消息
+        // 这样context.generate()会读取到正确的lastUserMessage
+        const removedMessages = [];
+        if (userMessageIndex < chat.length - 1) {
+            removedMessages.push(...chat.splice(userMessageIndex + 1));
+        }
 
         // 监听GENERATE_AFTER_DATA事件获取消息数组
         const dataListener = (data) => {
@@ -203,6 +235,11 @@ export class ConcurrentGeneratorV2 {
             }, true); // ✅ dryRun=true - 不触发UI状态
         } finally {
             eventSource.removeListener(event_types.GENERATE_AFTER_DATA, dataListener);
+
+            // 恢复被移除的消息
+            if (removedMessages.length > 0) {
+                chat.push(...removedMessages);
+            }
         }
 
         if (!capturedData) {
@@ -219,15 +256,6 @@ export class ConcurrentGeneratorV2 {
 
         // 手动构建完整的API请求体（参考LittleWhiteBox的实现）
         const requestBody = this._buildRequestBody(messages, capturedData);
-
-        console.log('[OEOS-ConcurrentV2] 构建的完整配置:', {
-            model: requestBody.model,
-            messages: requestBody.messages?.length,
-            stream: requestBody.stream,
-            temperature: requestBody.temperature,
-            max_tokens: requestBody.max_tokens,
-            chat_completion_source: requestBody.chat_completion_source
-        });
 
         return requestBody;
     }
@@ -489,7 +517,7 @@ export class ConcurrentGeneratorV2 {
      */
     async generatePage(slotId, pageId) {
         const sessionId = this._getSlotId(slotId);
-        const prompt = `goto: ${pageId}`;
+        const prompt = `${pageId}`;
 
         console.log(`[OEOS-ConcurrentV2] 开始生成页面: ${pageId} (槽位: ${sessionId})`);
 
@@ -507,8 +535,8 @@ export class ConcurrentGeneratorV2 {
             // 2. 添加AI消息槽位
             session.aiMessageIndex = this.addAIMessage();
 
-            // 3. 构建API请求（从chat数组中读取，这样{{lastUserMessage}}会被正确替换）
-            const requestData = await this.buildAPIRequest();
+            // 3. 构建API请求（传入用户消息索引，确保读取正确的用户消息）
+            const requestData = await this.buildAPIRequest(session.userMessageIndex);
 
             // 4. 调用API生成
             const generator = this.callAPI(requestData, session.abortController.signal);
