@@ -90,6 +90,7 @@ import CharacterSelector from './components/CharacterSelector'
 import { version } from '../package.json'
 import prettysize from 'prettysize'
 import OEOSV4Parser from './util/v4-parser.js'
+import { initializeSettings } from './util/globalSettings'
 
 
 export default {
@@ -152,6 +153,9 @@ export default {
     },
   }),
   mounted() {
+    // 初始化全局设置
+    initializeSettings()
+
     // Keep the fullscreen handling logic
     const t = this
     function exitHandler() {

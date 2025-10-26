@@ -1,3 +1,5 @@
+import { isImagesEnabled, isAudioEnabled } from './globalSettings'
+
 class OEOSV4Parser {
   static toV1(v4Script) {
     // console.log('[V4 Parser] ========== 开始解析 V4 脚本 ==========');
@@ -177,6 +179,16 @@ class OEOSV4Parser {
     let argsStr = parts[1] || ''
     const params = {}
     const blockInfo = {}
+
+    // 检查全局设置，如果图片/音频被禁用，则跳过相应命令
+    if (cmdName === 'image' && !isImagesEnabled()) {
+      console.log('[V4 Parser] Images disabled, skipping image command');
+      return { commandObj: { 'noop': {} }, blockInfo }
+    }
+    if (cmdName === 'audio.play' && !isAudioEnabled()) {
+      console.log('[V4 Parser] Audio disabled, skipping audio.play command');
+      return { commandObj: { 'noop': {} }, blockInfo }
+    }
 
     const shortcutCommands = {
       say: 'label',

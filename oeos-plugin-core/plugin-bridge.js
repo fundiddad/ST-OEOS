@@ -1,6 +1,17 @@
 // 使用 ES6 模块导出，不使用 window 对象
 
 import { updatePageEntry } from './game-state.js';
+import {
+    initializeSettings,
+    getSettings,
+    getSetting,
+    setSetting,
+    updateSettings,
+    isImagesEnabled,
+    isAudioEnabled,
+    setImagesEnabled,
+    setAudioEnabled
+} from './globalSettings.js';
 
 import { loadWi, saveWi, listenToAiResponse, getPresetByName, savePresetDirect } from './st-api.js';
 import {
@@ -952,4 +963,15 @@ Object.assign(window.oeosApi, {
         }
         return getManager(char.data.extensions.world);
     },
+
+    // 全局设置 API
+    initializeSettings,                 // 初始化全局设置
+    getSettings,                        // 获取所有设置
+    getSetting,                         // 获取单个设置
+    setSetting,                         // 设置单个值
+    updateSettings,                     // 批量更新设置
+    isImagesEnabled,                    // 检查图片是否启用
+    isAudioEnabled,                     // 检查音频是否启用
+    setImagesEnabled,                   // 启用/禁用图片
+    setAudioEnabled,                    // 启用/禁用音频
 });

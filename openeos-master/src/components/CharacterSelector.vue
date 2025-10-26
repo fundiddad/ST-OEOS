@@ -3,6 +3,16 @@
     <v-card>
       <v-card-title class="headline">
         选择角色开始冒险
+        <!-- 全局设置按钮 -->
+        <v-spacer></v-spacer>
+        <v-btn
+          icon
+          small
+          @click="showSettingsDialog = true"
+          title="OEOS全局设置"
+        >
+          <v-icon>mdi-cog</v-icon>
+        </v-btn>
       </v-card-title>
       <v-card-text>
         <v-progress-circular v-if="loading" indeterminate></v-progress-circular>
@@ -50,11 +60,39 @@
         </v-alert>
       </v-card-text>
     </v-card>
+
+    <!-- 全局设置对话框 -->
+    <v-dialog v-model="showSettingsDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">
+          OEOS全局设置
+        </v-card-title>
+        <v-card-text>
+          <v-switch
+            v-model="settings.enableImages"
+            label="启用图片"
+            @change="updateSettings"
+          ></v-switch>
+          <v-switch
+            v-model="settings.enableAudio"
+            label="启用音频"
+            @change="updateSettings"
+          ></v-switch>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="showSettingsDialog = false">
+            关闭
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
 // 使用全局 API（解耦方案），不直接 import SillyTavern 文件
+import { getSettings, updateSettings as updateGlobalSettings } from '../util/globalSettings'
 
 export default {
   name: 'CharacterSelector',
@@ -63,11 +101,17 @@ export default {
       characters: [],
       loading: true,
       error: null,
-      enablingOEOS: {}  // 跟踪每个角色的启用状态
+      enablingOEOS: {},  // 跟踪每个角色的启用状态
+      showSettingsDialog: false,  // 设置对话框显示状态
+      settings: {
+        enableImages: true,
+        enableAudio: true
+      }
     }
   },
   mounted() {
     this.loadCharacters()
+    this.loadSettings()
   },
   methods: {
     async loadCharacters() {
@@ -133,6 +177,30 @@ export default {
     formatDate(timestamp) {
       if (!timestamp) return '无';
       return new Date(timestamp).toLocaleDateString('zh-CN');
+    },
+    // 加载全局设置
+    loadSettings() {
+      try {
+        const globalSettings = getSettings();
+        this.settings = {
+          enableImages: globalSettings.enableImages !== false,
+          enableAudio: globalSettings.enableAudio !== false
+        };
+      } catch (err) {
+        console.error('[CharacterSelector] Error loading settings:', err);
+      }
+    },
+    // 更新全局设置
+    updateSettings() {
+      try {
+        updateGlobalSettings({
+          enableImages: this.settings.enableImages,
+          enableAudio: this.settings.enableAudio
+        });
+        console.log('[CharacterSelector] Settings updated:', this.settings);
+      } catch (err) {
+        console.error('[CharacterSelector] Error updating settings:', err);
+      }
     }
   }
 }
