@@ -68,19 +68,83 @@ export function injectAndSetupSwapper() {
     const toggleButton = document.createElement('div');
     toggleButton.id = 'toggle_oeos_button';
     toggleButton.className = 'fa-solid fa-rocket fa-fw interactable';
-    toggleButton.title = 'Toggle OEOS Interface';
+    toggleButton.title = 'OEOS Menu';
     optionsButton.parentNode.insertBefore(toggleButton, optionsButton.nextSibling);
 
-    // 3. Implement click-to-swap logic
-    toggleButton.addEventListener('click', () => {
+    // 3. 创建二级菜单（使用 SillyTavern 原生样式）
+    const oeosMenu = document.createElement('div');
+    oeosMenu.id = 'oeos-menu';
+    oeosMenu.style.cssText = `
+        display: none;
+        position: absolute;
+        background-color: var(--SmartThemeBlurTintColor);
+        border: 1px solid var(--SmartThemeBorderColor);
+        border-radius: 10px;
+        box-shadow: 0 0 20px var(--black70a);
+        z-index: 10000;
+        min-width: 180px;
+        padding: 10px;
+        gap: 5px;
+        flex-direction: column;
+    `;
+
+    // 菜单项：返回角色选择
+    const menuItemReturn = document.createElement('div');
+    menuItemReturn.className = 'menu_button menu_button_icon';
+    menuItemReturn.innerHTML = '<i class="fa-solid fa-users fa-fw"></i><span>返回角色选择</span>';
+    menuItemReturn.addEventListener('click', () => {
+        oeosMenu.style.display = 'none';
+        if (window.oeosVueApp && window.oeosVueApp.returnToCharacterSelection) {
+            window.oeosVueApp.returnToCharacterSelection();
+        } else {
+            console.warn('[OEOS] Vue app not ready yet');
+        }
+    });
+
+    // 菜单项：关闭OEOS
+    const menuItemClose = document.createElement('div');
+    menuItemClose.className = 'menu_button menu_button_icon';
+    menuItemClose.innerHTML = '<i class="fa-solid fa-times-circle fa-fw"></i><span>关闭OEOS</span>';
+    menuItemClose.addEventListener('click', () => {
+        oeosMenu.style.display = 'none';
+        const chatContainer = document.getElementById('chat');
+        const oeosContainer = document.getElementById('oeos-main-container');
+        oeosContainer.style.display = 'none';
+        chatContainer.style.display = '';
+    });
+
+    oeosMenu.appendChild(menuItemReturn);
+    oeosMenu.appendChild(menuItemClose);
+    document.body.appendChild(oeosMenu);
+
+    // 4. 火箭按钮点击显示/隐藏菜单
+    toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
         const chatContainer = document.getElementById('chat');
         const oeosContainer = document.getElementById('oeos-main-container');
         const isOeosVisible = oeosContainer.style.display === 'flex';
 
         if (isOeosVisible) {
-            oeosContainer.style.display = 'none';
-            chatContainer.style.display = '';
+            // OEOS已打开，显示菜单
+            const rect = toggleButton.getBoundingClientRect();
+            // 计算菜单高度（如果菜单还没显示过，先临时显示来获取高度）
+            const wasHidden = oeosMenu.style.display === 'none';
+            if (wasHidden) {
+                oeosMenu.style.visibility = 'hidden';
+                oeosMenu.style.display = 'block';
+            }
+            const menuHeight = oeosMenu.offsetHeight;
+            if (wasHidden) {
+                oeosMenu.style.display = 'none';
+                oeosMenu.style.visibility = 'visible';
+            }
+
+            // 菜单显示在按钮上方
+            oeosMenu.style.left = `${rect.left}px`;
+            oeosMenu.style.top = `${rect.top - menuHeight - 5}px`;
+            oeosMenu.style.display = oeosMenu.style.display === 'block' ? 'none' : 'block';
         } else {
+            // OEOS未打开，直接打开OEOS
             chatContainer.style.display = 'none';
             oeosContainer.style.display = 'flex';
 
@@ -107,6 +171,42 @@ export function injectAndSetupSwapper() {
                 isAppLoaded = true;
             }
         }
+    });
+
+    // 5. 点击其他地方关闭菜单
+    document.addEventListener('click', (e) => {
+        if (!oeosMenu.contains(e.target) && e.target !== toggleButton) {
+            oeosMenu.style.display = 'none';
+        }
+    });
+
+    // 6. 监听来自Vue应用的销毁请求（彻底关闭OEOS）
+    window.addEventListener('oeos-destroy-request', () => {
+        // 1. 销毁 Vue 实例
+        if (window.oeosVueInstance) {
+            window.oeosVueInstance.$destroy();
+            window.oeosVueInstance = null;
+        }
+
+        // 2. 清空挂载点
+        const appRoot = document.getElementById('app');
+        if (appRoot) {
+            appRoot.innerHTML = '';
+        }
+
+        // 3. 隐藏 OEOS 容器
+        const chatContainer = document.getElementById('chat');
+        const oeosContainer = document.getElementById('oeos-main-container');
+        oeosContainer.style.display = 'none';
+        chatContainer.style.display = '';
+
+        // 4. 重置加载标志，下次打开时重新加载
+        isAppLoaded = false;
+
+        // 5. 清空 oeosVueApp 引用
+        window.oeosVueApp = null;
+
+        console.log(`${extensionName}: OEOS destroyed successfully.`);
     });
 
     console.log(`${extensionName}: OEOS swapper injected successfully.`);

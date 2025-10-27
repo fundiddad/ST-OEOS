@@ -37,10 +37,13 @@ if (location.hostname === 'oeos-player-preview.herokuapp.com') {
   Vue.use(VueScrollTo)
   Vue.component('GlobalEvents', GlobalEvents)
 
-  new Vue({
+  const vueInstance = new Vue({
     vuetify,
     render: h => h(App),
   }).$mount('#app')
+
+  // 保存 Vue 实例到 window，以便外部销毁
+  window.oeosVueInstance = vueInstance
 
   // 挂载后立即重置外部样式，防止 Vuetify 影响 SillyTavern
   Vue.nextTick(() => {

@@ -178,6 +178,17 @@ export default {
       document.addEventListener('webkitfullscreenchange', exitHandler, false)
     }
 
+    // 暴露方法给外部调用（用于火箭按钮的二级菜单）
+    if (!window.oeosVueApp) {
+      window.oeosVueApp = {}
+    }
+    window.oeosVueApp.returnToCharacterSelection = () => {
+      this.returnToCharacterSelection()
+    }
+    window.oeosVueApp.closeOEOS = () => {
+      this.closeOEOS()
+    }
+
     // 不自动启动游戏，等待用户选择角色
     // this.startAiDrivenTease();
   },
@@ -208,6 +219,14 @@ export default {
       this.script = null;
       this.selectedCharacterIndex = null;
       this.selectedCharacter = null;
+    },
+
+    // 关闭OEOS（保存进度并切换回聊天界面）
+    closeOEOS() {
+      // 触发销毁事件，让 ui.js 处理 Vue 实例的销毁
+      // 游戏进度已经自动保存到 World Info 中，无需手动保存
+      const event = new CustomEvent('oeos-destroy-request');
+      window.dispatchEvent(event);
     },
 
     // New method to start the game via the ST plugin
