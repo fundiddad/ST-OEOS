@@ -107,10 +107,23 @@ export function injectAndSetupSwapper() {
     menuItemClose.innerHTML = '<i class="fa-solid fa-times-circle fa-fw"></i><span>关闭OEOS</span>';
     menuItemClose.addEventListener('click', () => {
         oeosMenu.style.display = 'none';
-        const chatContainer = document.getElementById('chat');
-        const oeosContainer = document.getElementById('oeos-main-container');
-        oeosContainer.style.display = 'none';
-        chatContainer.style.display = '';
+
+        // 先返回角色选择界面（清理游戏状态，停止播放器）
+        if (window.oeosVueApp && window.oeosVueApp.returnToCharacterSelection) {
+            window.oeosVueApp.returnToCharacterSelection();
+        } else {
+            console.warn('[OEOS] Vue app not ready yet');
+        }
+
+        // 短暂延迟后执行彻底关闭操作（确保 Vue 完成状态更新和组件卸载）
+        // 延迟时间很短，用户不会看到角色选择界面的闪现
+        setTimeout(() => {
+            if (window.oeosVueApp && window.oeosVueApp.closeOEOS) {
+                window.oeosVueApp.closeOEOS();
+            } else {
+                console.warn('[OEOS] Vue app not ready for close');
+            }
+        }, 50);
     });
 
     oeosMenu.appendChild(menuItemReturn);
