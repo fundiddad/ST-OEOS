@@ -43,7 +43,7 @@
 
 1. 将以下目录复制到你的 SillyTavern 第三方扩展目录：
    ```
-   src/SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
+   SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
    ```
 
 2. 重启 SillyTavern

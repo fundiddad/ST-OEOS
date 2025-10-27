@@ -35,7 +35,7 @@ This plugin integrates the openOEOS player into SillyTavern and introduces an in
    - Reference: https://discord.com/channels/1134557553011998840/1407146985643053096
 
 3. **Import Preset File**
-   - Import `src/oeos-plugin-core/小猫之神-oeos.json` into SPreset within Tavern Assistant
+   - Import `oeos-plugin-core/小猫之神-oeos.json` into SPreset within Tavern Assistant
    - Credits to preset author: 小猫之神
    - Reference: https://discord.com/channels/1134557553011998840/1402584661208858635
 
@@ -43,7 +43,7 @@ This plugin integrates the openOEOS player into SillyTavern and introduces an in
 
 1. Copy the following directory to your SillyTavern third-party extensions folder:
    ```
-   src/SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
+   SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
    ```
 
 2. Restart SillyTavern
