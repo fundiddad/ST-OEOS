@@ -1,12 +1,23 @@
 # OEOS 插件（SillyTavern 扩展）
 
 [English](README.md) | 简体中文
+
 **⚠️ 注意**
 
 **本项目目前仍处于非常初级的阶段，功能尚不完善，可能存在许多未预见的 Bug。此外，项目中的所有代码均由 AI 生成，仅供技术验证和交流。请谨慎使用。**
 
 一个将 AI 对话转化为互动式 OEOS 游戏体验的 SillyTavern 扩展。
 
+## 目录
+
+- [什么是 OEOS？](#什么是-oeos)
+- [什么是"基于 AI 的 OEOS"？](#什么是基于-ai-的-oeos)
+- [项目结构](#项目结构)
+- [构建方法](#构建方法)
+- [安装方法](#安装方法)
+- [工作原理](#工作原理)
+- [核心模块说明](#核心模块说明)
+- [致谢](#致谢)
 
 ## 什么是 OEOS？
 
@@ -22,6 +33,89 @@
 - **持久化存储**：生成的内容保存到角色的 World Info 中，可以随时读取和继续
 - **可视化交互**：通过 openOEOS 播放器渲染，提供图形化的游戏体验
 - **智能预生成**：支持并发预生成多个页面，提升体验流畅度
+
+## 项目结构
+
+```
+src/
+├── oeos-plugin-core/              # SillyTavern 扩展核心代码（Git 跟踪）
+│   ├── manifest.json              # 扩展清单文件
+│   ├── loader.js                  # 扩展加载器入口
+│   ├── index.js                   # 主入口，初始化所有模块
+│   ├── ui.js                      # UI 注入和界面切换逻辑
+│   ├── plugin-bridge.js           # 桥接层，暴露 window.oeosApi
+│   ├── st-api.js                  # SillyTavern API 抽象层
+│   ├── element-data-manager.js    # 游戏数据管理器（单一数据源）
+│   ├── game-state.js              # 游戏状态管理（读写 World Info）
+│   ├── globalSettings.js          # 全局设置管理（图片/音频开关）
+│   ├── chat-history-control.js    # 聊天历史控制模块
+│   ├── preset-switcher.js         # 预设自动切换逻辑
+│   ├── pregeneration.js           # 预生成系统核心
+│   ├── concurrent-generator.js    # 并发生成器 V1（quiet 模式）
+│   ├── concurrent-generator-v2.js # 并发生成器 V2（保存到聊天）
+│   ├── debug-context-comparison.js# 调试工具：上下文对比
+│   └── 小猫之神-oeos.json         # SPreset 预设文件
+│
+├── openeos-master/                # openOEOS 播放器（Vue 2 项目）
+│   ├── src/                       # Vue 源代码
+│   ├── public/                    # 静态资源
+│   ├── dist/                      # 构建输出（不跟踪）
+│   ├── package.json               # 依赖和构建脚本
+│   ├── vue.config.js              # Webpack 配置
+│   ├── deploy.js                  # 部署脚本（自动同步到 ST）
+│   └── README.md                  # openOEOS 播放器文档
+│
+├── SillyTavern-release/           # SillyTavern 安装目录（不跟踪）
+│   └── public/scripts/extensions/third-party/
+│       └── oeos-st-extension/     # 最终部署位置（自动生成）
+│
+├── package.json                   # 根项目依赖
+├── README.md                      # 英文文档
+└── README_CN.md                   # 中文文档（本文件）
+```
+
+## 构建方法
+
+### 环境要求
+
+- Node.js 14+ 和 npm
+- 已安装 SillyTavern（位于 `src/SillyTavern-release/`）
+
+### 构建步骤
+
+1. **安装依赖**
+   ```bash
+   cd src/openeos-master
+   npm install
+   ```
+
+2. **构建项目**
+   ```bash
+   npm run build
+   ```
+
+   构建过程会自动执行以下操作：
+   - 使用 Vue CLI 编译 openOEOS 播放器（输出到 `dist/`）
+   - 执行 `deploy.js` 脚本
+   - 将 `oeos-plugin-core/` 目录复制到 SillyTavern 扩展目录
+   - 将 `dist/` 构建产物复制到 SillyTavern 扩展目录
+
+   最终输出位置：
+   ```
+   src/SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
+   ```
+
+3. **开发模式**（可选）
+   ```bash
+   npm run serve
+   ```
+   启动 Vue 开发服务器，支持热重载
+
+### 构建说明
+
+- **不要手动修改** `SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/` 目录下的文件
+- 所有修改应在 `oeos-plugin-core/` 或 `openeos-master/src/` 中进行
+- 每次构建会自动同步最新代码到 SillyTavern 扩展目录
 
 ## 安装方法
 
@@ -41,9 +135,9 @@
 
 ### 安装扩展
 
-1. 将以下目录复制到你的 SillyTavern 第三方扩展目录：
+1. 按照上述"构建方法"构建项目，或直接将已构建的扩展目录复制到你的 SillyTavern 安装目录：
    ```
-   SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
+   SillyTavern/public/scripts/extensions/third-party/oeos-st-extension/
    ```
 
 2. 重启 SillyTavern
@@ -80,6 +174,151 @@
 - **前端播放器**：基于 Vue 2 + Vuetify 的 openOEOS 播放器
 - **桥接层**：连接 SillyTavern 和 openOEOS，处理数据提取和同步
 - **并发生成器**：利用 SillyTavern 的 API 实现多页面并发生成
+
+## 核心模块说明
+
+### oeos-plugin-core 目录文件详解
+
+#### 1. 入口和加载模块
+
+- **`manifest.json`**
+  - SillyTavern 扩展清单文件
+  - 定义扩展名称、版本、作者、入口文件等元数据
+  - 指定 `loader.js` 为扩展加载入口
+
+- **`loader.js`**
+  - 扩展加载器，SillyTavern 启动时首先执行此文件
+  - 导入 `index.js` 启动整个插件
+
+- **`index.js`**
+  - 主入口文件，初始化所有模块
+  - 调用 `injectAndSetupSwapper()` 注入 UI
+  - 导入 `plugin-bridge.js` 建立桥接层
+
+#### 2. UI 和界面模块
+
+- **`ui.js`**
+  - 负责在 SillyTavern 界面中注入 OEOS 游戏面板
+  - 实现聊天界面和游戏界面的切换逻辑
+  - 动态加载 openOEOS 播放器的构建产物（JS/CSS）
+  - 创建切换按钮，管理界面显示/隐藏
+
+#### 3. 核心桥接和 API 模块
+
+- **`plugin-bridge.js`**
+  - 桥接层核心，连接 SillyTavern 和 openOEOS 播放器
+  - 暴露 `window.oeosApi` 供 Vue 应用调用
+  - 提供以下主要功能：
+    - 游戏数据管理（通过 ElementDataManager）
+    - 预生成系统控制
+    - 聊天历史控制
+    - 预设自动切换
+    - 全局设置管理
+  - 监听 AI 回复事件，自动提取和保存游戏内容
+
+- **`st-api.js`**
+  - SillyTavern API 抽象层
+  - 封装对 SillyTavern 核心功能的访问：
+    - World Info 读写（`saveWi`, `loadWi`）
+    - 事件监听（`listenToAiResponse`）
+    - 预设管理（`getPresetByName`, `savePresetDirect`）
+  - 提供统一的错误处理和日志记录
+
+#### 4. 数据管理模块
+
+- **`element-data-manager.js`**
+  - 游戏数据管理器，作为 OEOS 游戏数据的单一数据源
+  - 管理以下数据结构：
+    - `pages`: 页面内容（Map: pageId -> content）
+    - `summary`: 页面摘要（Map: pageId -> abstract）
+    - `graph`: 页面关系图（Map: pageId -> [childIds]）
+    - `state`: 当前游戏状态
+    - `dynamicContext`: 动态上下文
+  - 功能：
+    - 从聊天消息中提取 Pages 和 Summary
+    - 从 World Info 加载游戏数据
+    - 增量更新和防抖同步到 World Info
+    - 差异化同步到预设文件
+
+- **`game-state.js`**
+  - 游戏状态管理模块
+  - 负责读写 World Info 中的游戏状态
+  - 更新预设文件中的 XML 标签内容（Graph、State、Dynamic-Context、Summary）
+  - 提供页面条目更新功能
+
+- **`globalSettings.js`**
+  - 全局设置管理模块
+  - 管理图片、音频等全局开关
+  - 使用 localStorage 持久化设置
+  - 提供设置的读取、更新、重置功能
+
+#### 5. 智能生成模块
+
+- **`pregeneration.js`**
+  - 预生成系统核心模块
+  - 监听页面变更事件，自动触发预生成
+  - 分析当前页面的跳转目标（goto 语句）
+  - 智能预生成未生成的目标页面（最多 10 个）
+  - 管理生成队列和槽位使用
+
+- **`concurrent-generator.js`**
+  - 并发生成器 V1（quiet 模式）
+  - 使用 SillyTavern 的 quiet 模式生成
+  - 不保存到聊天记录
+  - 支持 10 个并发槽位（xb1-xb10）
+
+- **`concurrent-generator-v2.js`**
+  - 并发生成器 V2（保存到聊天）
+  - 手动添加消息到聊天历史
+  - 生成的内容显示在聊天界面
+  - 支持 10 个并发槽位
+  - 完全使用用户的 API 配置和预设
+
+#### 6. 辅助功能模块
+
+- **`chat-history-control.js`**
+  - 聊天历史控制模块
+  - 提供开启/关闭 Prompt Manager 中 chatHistory 的功能
+  - 用于预生成时临时禁用聊天历史，避免上下文污染
+  - 支持静默切换（不触发 UI 更新）
+
+- **`preset-switcher.js`**
+  - 预设自动切换模块
+  - 在切换角色时自动切换到 OEOS 专用预设
+  - 保存和恢复每个角色的上一个预设
+  - 使用 PresetManager API 进行预设切换
+
+- **`debug-context-comparison.js`**
+  - 调试工具：上下文对比
+  - 对比并发生成器和 SillyTavern 正常生成的上下文差异
+  - 分析消息数组、角色分布、World Info 包含情况
+  - 暴露 `window.debugContextComparison` 供控制台调试
+
+#### 7. 配置文件
+
+- **`小猫之神-oeos.json`**
+  - SPreset 预设文件
+  - 包含 OEOS 游戏所需的提示词模板
+  - 定义 Graph、State、Dynamic-Context、Summary 等 XML 标签结构
+  - 需要导入到"酒馆助手"的 SPreset 中使用
+
+### 模块依赖关系
+
+```
+loader.js
+  └─> index.js
+       ├─> ui.js (注入界面)
+       └─> plugin-bridge.js (桥接层)
+            ├─> st-api.js (ST API 封装)
+            ├─> element-data-manager.js (数据管理)
+            ├─> game-state.js (状态管理)
+            ├─> globalSettings.js (全局设置)
+            ├─> chat-history-control.js (聊天历史控制)
+            ├─> preset-switcher.js (预设切换)
+            └─> pregeneration.js (预生成系统)
+                 ├─> concurrent-generator.js (V1)
+                 └─> concurrent-generator-v2.js (V2)
+```
 
 ## 致谢
 
