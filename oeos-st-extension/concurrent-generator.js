@@ -1,4 +1,4 @@
-// src/oeos-plugin-core/concurrent-generator.js
+// src/oeos-st-extension/concurrent-generator.js
 // 简化版并发生成系统 - 不依赖LittleWhiteBox
 
 import { getRequestHeaders, eventSource, event_types } from '../../../../script.js';

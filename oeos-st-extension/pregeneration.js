@@ -1,4 +1,4 @@
-// src/oeos-plugin-core/pregeneration.js
+// src/oeos-st-extension/pregeneration.js
 // 预生成系统核心模块
 
 import { getManager } from './plugin-bridge.js';

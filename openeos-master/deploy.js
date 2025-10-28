@@ -1,15 +1,14 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-// Define paths
-// Source for build artifacts (Vue build output)
-const sourceDir = path.join(__dirname, 'dist');
-// Source for plugin core files (tracked in git)
-const pluginCoreDir = path.join(__dirname, '..', 'oeos-plugin-core');
+// 定义源路径
+// oeos-st-extension 是完整的插件
+const pluginSourceDir = path.join(__dirname, '..', 'oeos-st-extension');
+const distDir = path.join(__dirname, 'dist');
 
-// Final destination in SillyTavern
-// Prefer src/SillyTavern-release if it exists; fall back to repo root/SillyTavern-release
-// Allow override via environment variable ST_EXT_DIR (absolute path to extension folder)
+// 最终目标目录在 SillyTavern
+// 优先使用 src/SillyTavern-release，如果不存在则回退到 repo 根目录
+// 允许通过环境变量 ST_EXT_DIR 覆盖（绝对路径）
 const explicitExtDir = process.env.ST_EXT_DIR;
 function resolveTargetDir() {
   if (explicitExtDir) {
@@ -25,7 +24,7 @@ function resolveTargetDir() {
       return path.join(base, 'public', 'scripts', 'extensions', 'third-party', 'oeos-st-extension');
     }
   }
-  // Default to src/SillyTavern-release
+  // 默认使用 src/SillyTavern-release
   return path.join(__dirname, '..', 'SillyTavern-release', 'public', 'scripts', 'extensions', 'third-party', 'oeos-st-extension');
 }
 
@@ -33,31 +32,39 @@ const finalTargetDir = resolveTargetDir();
 
 try {
   console.log('Starting deployment process...');
+  console.log(`Plugin Source: ${pluginSourceDir}`);
+  console.log(`Build Source: ${distDir}`);
+  console.log(`Target: ${finalTargetDir}`);
 
-  console.log(`Copying build artifacts from "${sourceDir}" to "${finalTargetDir}"...`);
-  if (!fs.existsSync(sourceDir)) {
-    throw new Error(`Error: Source directory "${sourceDir}" not found. Build may have failed.`);
+  // 检查插件源是否存在
+  if (!fs.existsSync(pluginSourceDir)) {
+    throw new Error(`Error: Plugin directory "${pluginSourceDir}" not found.`);
   }
 
-  // Ensure final destination exists
+  // 检查 dist 是否存在
+  if (!fs.existsSync(distDir)) {
+    throw new Error(`Error: Build directory "${distDir}" not found. Build may have failed.`);
+  }
+
+  // 确保最终目标目录存在
   fs.ensureDirSync(finalTargetDir);
 
-  // Copy plugin core first (if present)
-  if (fs.existsSync(pluginCoreDir)) {
-    console.log(`Copying plugin core from "${pluginCoreDir}" ...`);
-    fs.copySync(pluginCoreDir, finalTargetDir, { overwrite: true });
-  } else {
-    console.warn(`Plugin core directory not found: ${pluginCoreDir}. Skipping.`);
-  }
+  // 步骤 1: 复制完整的插件文件
+  console.log('\nStep 1: Copying complete plugin from oeos-st-extension/...');
+  fs.copySync(pluginSourceDir, finalTargetDir, { overwrite: true });
+  console.log('✓ Plugin files copied');
 
-  // Then copy Vue build artifacts into the same extension folder
-  fs.copySync(sourceDir, finalTargetDir, { overwrite: true });
+  // 步骤 2: 复制 Vue 构建产物（覆盖合并）
+  console.log('\nStep 2: Copying Vue build artifacts from dist/...');
+  fs.copySync(distDir, finalTargetDir, { overwrite: true });
+  console.log('✓ Build artifacts merged');
 
-  console.log('Extension deployed to SillyTavern successfully.');
+  console.log('\n✓ Extension deployed to SillyTavern successfully.');
+  console.log(`  Location: ${finalTargetDir}`);
   console.log('\nDeployment finished.');
 
 } catch (error) {
-  console.error('\nAn error occurred during deployment:');
+  console.error('\n✗ An error occurred during deployment:');
   console.error(error.message);
   process.exit(1);
 }

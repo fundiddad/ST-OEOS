@@ -38,7 +38,7 @@ This plugin integrates the openOEOS player into SillyTavern and introduces an in
 
 ```
 src/
-├── oeos-plugin-core/              # SillyTavern extension core code (Git tracked)
+├── oeos-st-extension/             # Complete OEOS plugin (Git tracked)
 │   ├── manifest.json              # Extension manifest file
 │   ├── loader.js                  # Extension loader entry point
 │   ├── index.js                   # Main entry, initializes all modules
@@ -54,7 +54,8 @@ src/
 │   ├── concurrent-generator.js    # Concurrent generator V1 (quiet mode)
 │   ├── concurrent-generator-v2.js # Concurrent generator V2 (saves to chat)
 │   ├── debug-context-comparison.js# Debug tool: context comparison
-│   └── 小猫之神-oeos.json         # SPreset preset file
+│   ├── 小猫之神-oeos.json         # SPreset preset file
+│   └── README.md                  # Plugin documentation
 │
 ├── openeos-master/                # openOEOS player (Vue 2 project)
 │   ├── src/                       # Vue source code
@@ -62,7 +63,7 @@ src/
 │   ├── dist/                      # Build output (not tracked)
 │   ├── package.json               # Dependencies and build scripts
 │   ├── vue.config.js              # Webpack configuration
-│   ├── deploy.js                  # Deployment script (auto-sync to ST)
+│   ├── deploy.js                  # Deployment script (copies plugin + build)
 │   └── README.md                  # openOEOS player documentation
 │
 ├── SillyTavern-release/           # SillyTavern installation (not tracked)
@@ -97,8 +98,8 @@ src/
    The build process automatically performs the following:
    - Compiles the openOEOS player using Vue CLI (output to `dist/`)
    - Executes the `deploy.js` script
-   - Copies the `oeos-plugin-core/` directory to the SillyTavern extension folder
-   - Copies the `dist/` build artifacts to the SillyTavern extension folder
+   - Copies the complete plugin from `oeos-st-extension/`
+   - Merges the `dist/` build artifacts into the same folder
 
    Final output location:
    ```
@@ -114,7 +115,8 @@ src/
 ### Build Notes
 
 - **Do NOT manually modify** files in `SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/`
-- All changes should be made in `oeos-plugin-core/` or `openeos-master/src/`
+- Plugin core files: modify in `oeos-st-extension/`
+- Vue player code: modify in `openeos-master/src/`
 - Each build automatically syncs the latest code to the SillyTavern extension directory
 
 ## Installation
@@ -129,7 +131,7 @@ src/
    - Reference: https://discord.com/channels/1134557553011998840/1407146985643053096
 
 3. **Import Preset File**
-   - Import `src/oeos-plugin-core/小猫之神-oeos.json` into SPreset within Tavern Assistant
+   - Import `src/oeos-st-extension/小猫之神-oeos.json` into SPreset within Tavern Assistant
    - Credits to preset author: 小猫之神
    - Reference: https://discord.com/channels/1134557553011998840/1402584661208858635
 
@@ -177,7 +179,7 @@ src/
 
 ## Core Modules
 
-### oeos-plugin-core Directory Files
+### Plugin Core Files (in oeos-st-extension/)
 
 #### 1. Entry and Loading Modules
 

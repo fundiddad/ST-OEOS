@@ -1,4 +1,4 @@
-// src/oeos-plugin-core/debug-context-comparison.js
+// src/oeos-st-extension/debug-context-comparison.js
 // 调试工具：对比并发生成器和SillyTavern正常生成的上下文差异
 
 import { getConcurrentGenerator } from './concurrent-generator.js';

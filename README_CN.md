@@ -6,17 +6,18 @@
 
 **本项目目前仍处于非常初级的阶段，功能尚不完善，可能存在许多未预见的 Bug。此外，项目中的所有代码均由 AI 生成，仅供技术验证和交流。请谨慎使用。**
 
+包括这个文档的大部分内容也是AI生成的。
 一个将 AI 对话转化为互动式 OEOS 游戏体验的 SillyTavern 扩展。
 
 ## 目录
 
 - [什么是 OEOS？](#什么是-oeos)
 - [什么是"基于 AI 的 OEOS"？](#什么是基于-ai-的-oeos)
-- [项目结构](#项目结构)
-- [构建方法](#构建方法)
 - [安装方法](#安装方法)
 - [工作原理](#工作原理)
 - [核心模块说明](#核心模块说明)
+- [项目结构](#项目结构)
+- [构建方法](#构建方法)
 - [致谢](#致谢)
 
 ## 什么是 OEOS？
@@ -34,115 +35,45 @@
 - **可视化交互**：通过 openOEOS 播放器渲染，提供图形化的游戏体验
 - **智能预生成**：支持并发预生成多个页面，提升体验流畅度
 
-## 项目结构
-
-```
-src/
-├── oeos-plugin-core/              # SillyTavern 扩展核心代码（Git 跟踪）
-│   ├── manifest.json              # 扩展清单文件
-│   ├── loader.js                  # 扩展加载器入口
-│   ├── index.js                   # 主入口，初始化所有模块
-│   ├── ui.js                      # UI 注入和界面切换逻辑
-│   ├── plugin-bridge.js           # 桥接层，暴露 window.oeosApi
-│   ├── st-api.js                  # SillyTavern API 抽象层
-│   ├── element-data-manager.js    # 游戏数据管理器（单一数据源）
-│   ├── game-state.js              # 游戏状态管理（读写 World Info）
-│   ├── globalSettings.js          # 全局设置管理（图片/音频开关）
-│   ├── chat-history-control.js    # 聊天历史控制模块
-│   ├── preset-switcher.js         # 预设自动切换逻辑
-│   ├── pregeneration.js           # 预生成系统核心
-│   ├── concurrent-generator.js    # 并发生成器 V1（quiet 模式）
-│   ├── concurrent-generator-v2.js # 并发生成器 V2（保存到聊天）
-│   ├── debug-context-comparison.js# 调试工具：上下文对比
-│   └── 小猫之神-oeos.json         # SPreset 预设文件
-│
-├── openeos-master/                # openOEOS 播放器（Vue 2 项目）
-│   ├── src/                       # Vue 源代码
-│   ├── public/                    # 静态资源
-│   ├── dist/                      # 构建输出（不跟踪）
-│   ├── package.json               # 依赖和构建脚本
-│   ├── vue.config.js              # Webpack 配置
-│   ├── deploy.js                  # 部署脚本（自动同步到 ST）
-│   └── README.md                  # openOEOS 播放器文档
-│
-├── SillyTavern-release/           # SillyTavern 安装目录（不跟踪）
-│   └── public/scripts/extensions/third-party/
-│       └── oeos-st-extension/     # 最终部署位置（自动生成）
-│
-├── package.json                   # 根项目依赖
-├── README.md                      # 英文文档
-└── README_CN.md                   # 中文文档（本文件）
-```
-
-## 构建方法
-
-### 环境要求
-
-- Node.js 14+ 和 npm
-- 已安装 SillyTavern（位于 `src/SillyTavern-release/`）
-
-### 构建步骤
-
-1. **安装依赖**
-   ```bash
-   cd src/openeos-master
-   npm install
-   ```
-
-2. **构建项目**
-   ```bash
-   npm run build
-   ```
-
-   构建过程会自动执行以下操作：
-   - 使用 Vue CLI 编译 openOEOS 播放器（输出到 `dist/`）
-   - 执行 `deploy.js` 脚本
-   - 将 `oeos-plugin-core/` 目录复制到 SillyTavern 扩展目录
-   - 将 `dist/` 构建产物复制到 SillyTavern 扩展目录
-
-   最终输出位置：
-   ```
-   src/SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
-   ```
-
-3. **开发模式**（可选）
-   ```bash
-   npm run serve
-   ```
-   启动 Vue 开发服务器，支持热重载
-
-### 构建说明
-
-- **不要手动修改** `SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/` 目录下的文件
-- 所有修改应在 `oeos-plugin-core/` 或 `openeos-master/src/` 中进行
-- 每次构建会自动同步最新代码到 SillyTavern 扩展目录
 
 ## 安装方法
+
 
 ### 前置条件
 
 1. **安装酒馆助手**
    - 请先确保已安装"酒馆助手"插件
+   - 参考链接https://n0vi028.github.io/JS-Slash-Runner-Doc/
+
 
 2. **安装 SPreset 脚本**
    - 安装"酒馆助手脚本"中的【SPreset - 预设内置正则 | 宏嵌套…】
    - 参考链接：https://discord.com/channels/1134557553011998840/1407146985643053096
 
+![alt text](readme_images/1.png)
 3. **导入预设文件**
-   - 将 `src/oeos-plugin-core/小猫之神-oeos.json` 导入到"酒馆助手"的 SPreset 中
+   - 将 `oeos-st-extension/小猫之神-oeos.json` 导入到"酒馆助手"的 SPreset 中
+
+   ![alt text](image.png)
    - 感谢预设作者：小猫之神
    - 参考链接：https://discord.com/channels/1134557553011998840/1402584661208858635
 
+
 ### 安装扩展
 
-1. 按照上述"构建方法"构建项目，或直接将已构建的扩展目录复制到你的 SillyTavern 安装目录：
+1. 将oeos-st-extension复制到你的 SillyTavern 安装目录：
    ```
    SillyTavern/public/scripts/extensions/third-party/oeos-st-extension/
    ```
+   就像是这样：
+   ![alt text](image-1.png)
 
 2. 重启 SillyTavern
 
 3. 在"扩展管理 > 第三方扩展"中启用 "OEOS Interface"
+![alt text](image-2.png)
+
+
 
 ## 工作原理
 
@@ -175,9 +106,9 @@ src/
 - **桥接层**：连接 SillyTavern 和 openOEOS，处理数据提取和同步
 - **并发生成器**：利用 SillyTavern 的 API 实现多页面并发生成
 
-## 核心模块说明
+## 核心模块说明（对于开发者）
 
-### oeos-plugin-core 目录文件详解
+### 插件核心文件（位于 oeos-st-extension/）
 
 #### 1. 入口和加载模块
 
@@ -319,6 +250,85 @@ loader.js
                  ├─> concurrent-generator.js (V1)
                  └─> concurrent-generator-v2.js (V2)
 ```
+## 项目结构
+
+```
+src/
+├── oeos-st-extension/             # 完整的 OEOS 插件（Git 跟踪）
+│   ├── manifest.json              # 扩展清单文件
+│   ├── loader.js                  # 扩展加载器入口
+│   ├── index.js                   # 主入口，初始化所有模块
+│   ├── ui.js                      # UI 注入和界面切换逻辑
+│   ├── plugin-bridge.js           # 桥接层，暴露 window.oeosApi
+│   ├── st-api.js                  # SillyTavern API 抽象层
+│   ├── element-data-manager.js    # 游戏数据管理器（单一数据源）
+│   ├── game-state.js              # 游戏状态管理（读写 World Info）
+│   ├── globalSettings.js          # 全局设置管理（图片/音频开关）
+│   ├── chat-history-control.js    # 聊天历史控制模块
+│   ├── preset-switcher.js         # 预设自动切换逻辑
+│   ├── pregeneration.js           # 预生成系统核心
+│   ├── concurrent-generator.js    # 并发生成器 V1（quiet 模式）
+│   ├── concurrent-generator-v2.js # 并发生成器 V2（保存到聊天）
+│   ├── debug-context-comparison.js# 调试工具：上下文对比
+│   ├── 小猫之神-oeos.json         # SPreset 预设文件
+│   └── README.md                  # 插件文档
+│
+├── openeos-master/                # openOEOS 播放器（Vue 2 项目）
+│   ├── src/                       # Vue 源代码
+│   ├── public/                    # 静态资源
+│   ├── dist/                      # 构建输出（不跟踪）
+│   ├── package.json               # 依赖和构建脚本
+│   ├── vue.config.js              # Webpack 配置
+│   ├── deploy.js                  # 部署脚本（复制插件 + 构建）
+│   └── README.md                  # openOEOS 播放器文档
+│
+├── SillyTavern-release/           # SillyTavern 安装目录（不跟踪）
+│   └── public/scripts/extensions/third-party/
+│       └── oeos-st-extension/     # 最终部署位置（自动生成）
+│
+├── package.json                   # 根项目依赖
+├── README.md                      # 英文文档
+└── README_CN.md                   # 中文文档（本文件）
+```
+
+## 构建方法
+
+### 环境要求
+
+- Node.js 14+ 和 npm
+- 已安装 SillyTavern（位于 `src/SillyTavern-release/`）
+
+### 构建步骤
+
+1. **安装依赖**
+   ```bash
+   cd src/openeos-master
+   npm install
+   ```
+
+2. **构建项目**
+   ```bash
+   npm run build
+   ```
+
+   构建过程会自动执行以下操作：
+   - 使用 Vue CLI 编译 openOEOS 播放器（输出到 `dist/`）
+   - 执行 `deploy.js` 脚本
+   - 从 `oeos-st-extension/` 复制完整的插件
+   - 将 `dist/` 构建产物合并到同一文件夹
+
+   最终输出位置：
+   ```
+   src/SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/
+   ```
+
+
+### 构建说明
+
+- 不需要手动修改 `SillyTavern-release/public/scripts/extensions/third-party/oeos-st-extension/` 目录下的文件
+- 插件核心文件：在 `oeos-st-extension/` 中修改
+- Vue 播放器代码：在 `openeos-master/src/` 中修改
+- 每次构建会自动同步最新代码到 SillyTavern 扩展目录
 
 ## 致谢
 
