@@ -19,6 +19,7 @@ Currently, it doesn't handle how to make AI include images and audio, so only te
 
 - [What is OEOS?](#what-is-oeos)
 - [What is "AI-based OEOS"?](#what-is-ai-based-oeos)
+- [Demo](#demo)
 - [Installation](#installation)
 - [Future Plans](#future-plans)
 - [How It Works](#how-it-works)
@@ -42,6 +43,13 @@ This plugin integrates the openOEOS player into SillyTavern and implements an in
 - **Visual Interaction**: Rendered through the openOEOS player, providing a graphical game experience
 - **Smart Pre-generation**: Supports concurrent pre-generation of multiple pages to improve experience fluidity
 
+
+
+## Demo
+Auto-generated pages:
+![alt text](readme_images/demo-1.png)
+AI-generated pages:
+![alt text](readme_images/demo-2.png)
 
 ## Installation
 

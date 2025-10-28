@@ -18,6 +18,7 @@
 
 - [什么是 OEOS？](#什么是-oeos)
 - [什么是"基于 AI 的 OEOS"？](#什么是基于-ai-的-oeos)
+- [演示](#演示)
 - [安装方法](#安装方法)
 - [未来计划](#未来计划)
 - [工作原理](#工作原理)
@@ -43,8 +44,11 @@
 
 
 
-
-
+## 演示
+自动生成页面：
+![alt text](readme_images/demo-1.png)
+AI生成的页面：
+![alt text](readme_images/demo-2.png)
 
 ## 安装方法
 
@@ -103,6 +107,8 @@
 点击该角色，就能开始游玩了
 ![alt text](readme_images/image-9.png)
 ![alt text](readme_images/image-10.png)
+
+
 
 ## 未来计划（画饼）
 
