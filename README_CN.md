@@ -2,12 +2,17 @@
 
 [English](README.md) | 简体中文
 
+一个将 AI 对话转化为互动式 OEOS 游戏体验的 SillyTavern 扩展。
+
 **⚠️ 注意**
 
 **本项目目前仍处于非常初级的阶段，功能尚不完善，可能存在许多未预见的 Bug。此外，项目中的所有代码均由 AI 生成，仅供技术验证和交流。请谨慎使用。**
 
 包括这个文档的大部分内容也是AI生成的。
-一个将 AI 对话转化为互动式 OEOS 游戏体验的 SillyTavern 扩展。
+
+当前还不处理不知道怎么如何让AI加入图片、音频，只能实现文字游玩。
+
+
 
 ## 目录
 
@@ -54,7 +59,7 @@
 3. **导入预设文件**
    - 将 `oeos-st-extension/小猫之神-oeos.json` 导入到"酒馆助手"的 SPreset 中
 
-   ![alt text](image.png)
+   ![alt text](readme_images/image.png)
    - 感谢预设作者：小猫之神
    - 参考链接：https://discord.com/channels/1134557553011998840/1402584661208858635
 
@@ -66,16 +71,37 @@
    SillyTavern/public/scripts/extensions/third-party/oeos-st-extension/
    ```
    就像是这样：
-   ![alt text](image-1.png)
+   ![alt text](readme_images/image-1.png)
 
 2. 重启 SillyTavern
 
-3. 在"扩展管理 > 第三方扩展"中启用 "OEOS Interface"
-![alt text](image-2.png)
+3. 在"扩展管理 > 第三方扩展"中启用 "OEOS Interface"\\
+
+
+![alt text](readme_images/image-2.png)
+
+现在你应该可以看见输入框旁边的🚀按钮了。
+![alt text](readme_images/image-3.png)
+
+### 使用方法
+
+1. 在此之前，你应该先了解ST的使用方法。准备好一个角色卡、以及API连接。
+![alt text](readme_images/image-4.png)
+2. 把角色卡的第一条信息转为OEOS脚本格式
+![alt text](readme_images/image-5.png)
+你可以使用AI，将[OESO脚本文档](OEOScript_format_AI_zh.md)和你的第一条信息发送给AI，要求将第一条信息改为OEOS格式，并且使用<game>、<Pages>、<summary>标签包裹。就像这样：
+![alt text](readme_images/image-6.png)
+3. 点击输入框左边的火箭图标，进入角色选择页面，并且启用刚才的角色。
+![alt text](readme_images/image-7.png)
+然后变成绿色
+![alt text](readme_images/image-8.png)
+点击该角色，就能开始游玩了
+![alt text](readme_images/image-9.png)
+![alt text](readme_images/image-10.png)
 
 
 
-## 工作原理
+## 工作原理（对于开发者）
 
 ### 整体流程
 
@@ -250,7 +276,7 @@ loader.js
                  ├─> concurrent-generator.js (V1)
                  └─> concurrent-generator-v2.js (V2)
 ```
-## 项目结构
+## 项目结构（对于开发者）
 
 ```
 src/
@@ -291,7 +317,7 @@ src/
 └── README_CN.md                   # 中文文档（本文件）
 ```
 
-## 构建方法
+## 构建方法（对于开发者）
 
 ### 环境要求
 
