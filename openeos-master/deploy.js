@@ -49,19 +49,21 @@ try {
   // 确保最终目标目录存在
   fs.ensureDirSync(finalTargetDir);
 
-  // 步骤 1: 复制完整的插件文件
-  console.log('\nStep 1: Copying complete plugin from oeos-st-extension/...');
+  // 步骤 1: 将 Vue 构建产物复制到插件源目录（使其成为完整插件）
+  console.log('\nStep 1: Merging Vue build artifacts into oeos-st-extension/...');
+  fs.copySync(distDir, pluginSourceDir, { overwrite: true });
+  console.log('✓ Build artifacts merged into plugin source');
+  console.log(`  Plugin source is now complete at: ${pluginSourceDir}`);
+
+  // 步骤 2: 复制完整的插件到 SillyTavern
+  console.log('\nStep 2: Deploying complete plugin to SillyTavern...');
   fs.copySync(pluginSourceDir, finalTargetDir, { overwrite: true });
-  console.log('✓ Plugin files copied');
+  console.log('✓ Complete plugin deployed');
 
-  // 步骤 2: 复制 Vue 构建产物（覆盖合并）
-  console.log('\nStep 2: Copying Vue build artifacts from dist/...');
-  fs.copySync(distDir, finalTargetDir, { overwrite: true });
-  console.log('✓ Build artifacts merged');
-
-  console.log('\n✓ Extension deployed to SillyTavern successfully.');
-  console.log(`  Location: ${finalTargetDir}`);
-  console.log('\nDeployment finished.');
+  console.log('\n✓ Deployment finished successfully.');
+  console.log(`  Plugin source (complete): ${pluginSourceDir}`);
+  console.log(`  SillyTavern location: ${finalTargetDir}`);
+  console.log('\nNote: src/oeos-st-extension/ now contains the complete plugin with all build artifacts.');
 
 } catch (error) {
   console.error('\n✗ An error occurred during deployment:');
