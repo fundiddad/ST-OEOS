@@ -181,8 +181,9 @@ export class PregenerationSystem {
      * 等待数据更新
      */
     async waitForDataUpdate() {
-        // 等待AI回复被处理并更新到World Info
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // 由于 concurrent-generator-v2 已经在生成完成后立即更新内存缓存
+        // 这里只需要短暂等待，确保所有异步操作完成
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     /**

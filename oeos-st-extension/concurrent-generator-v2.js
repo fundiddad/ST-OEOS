@@ -17,7 +17,8 @@ import { chat, saveChat, characters, this_chid, eventSource, event_types, getReq
 import { getEventSourceStream } from '../../../sse-stream.js';
 import { chat_completion_sources, oai_settings, getStreamingReply } from '../../../openai.js';
 import { power_user } from '../../../../scripts/power-user.js';
-
+import { ElementDataManager} from './element-data-manager.js';
+import { getManager } from './plugin-bridge.js';
 
 
 /**
@@ -172,6 +173,55 @@ export class ConcurrentGeneratorV2 {
             console.log('[OEOS-ConcurrentV2] 聊天记录已保存');
         } catch (error) {
             console.error('[OEOS-ConcurrentV2] 保存聊天记录失败:', error);
+        }
+    }
+
+    /**
+     * 立即更新内存缓存
+     * 从AI消息中提取页面内容并更新到ElementDataManager
+     * @param {string} aiMessage - AI响应消息
+     */
+    async updateMemoryCache(aiMessage) {
+        try {
+            // 获取当前角色的World Info名称
+            const char = characters[this_chid];
+            if (!char) {
+                console.warn('[OEOS-ConcurrentV2] 没有选中的角色');
+                return;
+            }
+
+            const worldInfoName = char.data?.extensions?.world;
+            if (!worldInfoName) {
+                console.warn('[OEOS-ConcurrentV2] 角色没有绑定 World Info');
+                return;
+            }
+
+            // 提取页面和摘要
+            const pages = ElementDataManager.extractPagesFromChat([{ mes: aiMessage }]);
+            const summaries = ElementDataManager.extractSummariesFromChat([{ mes: aiMessage }]);
+
+            if (pages.length === 0 && summaries.length === 0) {
+                console.log('[OEOS-ConcurrentV2] 消息中没有找到页面内容');
+                return;
+            }
+
+            // 更新到内存
+            const mgr = getManager(worldInfoName);
+            for (const { pageId, content } of pages) {
+                const s = summaries.find(x => x.pageId === pageId);
+                mgr.updatePage(pageId, content, s?.abstract);
+                console.log(`[OEOS-ConcurrentV2] 页面 ${pageId} 已更新到内存缓存`);
+            }
+            for (const { pageId, abstract } of summaries) {
+                if (!pages.find(p => p.pageId === pageId)) {
+                    mgr.updatePage(pageId, undefined, abstract);
+                }
+            }
+
+            // 标记需要同步到World Info
+            mgr.scheduleSync(() => mgr.syncAll());
+        } catch (error) {
+            console.error('[OEOS-ConcurrentV2] 更新内存缓存失败:', error);
         }
     }
 
@@ -569,7 +619,11 @@ export class ConcurrentGeneratorV2 {
             // 9. 保存聊天记录
             await this.saveChatHistory();
 
-            // 10. 触发AI回复完成事件，让OEOS的AI回复监听器处理这条消息
+            // 10. 立即更新内存缓存，确保页面生成后立即可用
+            // 这样不需要等待事件监听器的异步处理
+            await this.updateMemoryCache(session.text);
+
+            // 11. 触发AI回复完成事件，让OEOS的AI回复监听器处理这条消息
             // 这样页面内容会被提取并保存到World Info
             await eventSource.emit('chat_completion_stream_finish');
 
