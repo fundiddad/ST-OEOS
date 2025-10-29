@@ -45,6 +45,8 @@ export function getManager(worldInfoName) {
 }
 // 导入 SillyTavern 核心模块
 import { characters, this_chid, chat, eventSource, event_types, getRequestHeaders, selectCharacterById } from '../../../../script.js';
+// 导入 i18n 翻译函数
+import { translate } from '../../../../scripts/i18n.js';
 
 
 
@@ -1039,4 +1041,7 @@ Object.assign(window.oeosApi, {
     isAudioEnabled,                     // 检查音频是否启用
     setImagesEnabled,                   // 启用/禁用图片
     setAudioEnabled,                    // 启用/禁用音频
+
+    // i18n 翻译函数
+    translate,                          // 翻译文本
 });

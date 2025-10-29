@@ -2,12 +2,12 @@
   <v-container class="character-selector">
     <v-card>
       <v-card-title class="headline">
-        选择角色开始冒险
+        <span data-i18n="Select Character to Start Adventure">Select Character to Start Adventure</span>
         <!-- 全局设置按钮 -->
         <v-spacer></v-spacer>
         <div
           class="drawer-icon fa-solid fa-sliders fa-fw closedIcon interactable"
-          title="AI响应配置"
+          title="AI Response Configuration"
           data-i18n="[title]AI Response Configuration"
           tabindex="0"
           @click="showSettingsDialog = true"
@@ -34,11 +34,11 @@
                 </v-chip>
               </v-list-item-title>
               <v-list-item-subtitle>
-                {{ char.description ? char.description.substring(0, 100) : '无描述' }}...
+                {{ char.description ? char.description.substring(0, 100) : $t('No description') }}...
               </v-list-item-subtitle>
               <v-list-item-subtitle class="text--secondary">
-                聊天记录: {{ char.chat_size || 0 }} |
-                最后聊天: {{ formatDate(char.date_last_chat) }}
+                <span data-i18n="Chat history">Chat history</span>: {{ char.chat_size || 0 }} |
+                <span data-i18n="Last chat">Last chat</span>: {{ formatDate(char.date_last_chat) }}
                 <span v-if="char.worldInfo"> | World Info: {{ char.worldInfo }}</span>
               </v-list-item-subtitle>
             </v-list-item-content>
@@ -48,8 +48,9 @@
                 color="primary"
                 @click.stop="enableOEOS(index)"
                 :loading="enablingOEOS[index]"
+                data-i18n="Enable OEOS"
               >
-                启用 OEOS
+                Enable OEOS
               </v-btn>
             </v-list-item-action>
             <v-list-item-action v-if="char.isOEOS">
@@ -58,14 +59,15 @@
                 color="error"
                 @click.stop="disableOEOS(index)"
                 :loading="disablingOEOS[index]"
+                data-i18n="Delete OEOS"
               >
-                删除 OEOS
+                Delete OEOS
               </v-btn>
             </v-list-item-action>
           </v-list-item>
         </v-list>
         <v-alert v-else type="info">
-          没有找到可用的角色
+          <span data-i18n="No characters found">No characters found</span>
         </v-alert>
       </v-card-text>
     </v-card>
@@ -74,24 +76,24 @@
     <v-dialog v-model="showSettingsDialog" max-width="400">
       <v-card>
         <v-card-title class="headline">
-          OEOS全局设置
+          <span data-i18n="OEOS Global Settings">OEOS Global Settings</span>
         </v-card-title>
         <v-card-text>
           <v-switch
             v-model="settings.enableImages"
-            label="启用图片"
+            :label="$t('Enable Images')"
             @change="updateSettings"
           ></v-switch>
           <v-switch
             v-model="settings.enableAudio"
-            label="启用音频"
+            :label="$t('Enable Audio')"
             @change="updateSettings"
           ></v-switch>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="showSettingsDialog = false">
-            关闭
+            <span data-i18n="Close">Close</span>
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -124,6 +126,13 @@ export default {
     this.loadSettings()
   },
   methods: {
+    // 翻译函数
+    $t(key) {
+      if (window.oeosApi && window.oeosApi.translate) {
+        return window.oeosApi.translate(key);
+      }
+      return key;
+    },
     async loadCharacters() {
       try {
         this.loading = true;
@@ -137,7 +146,7 @@ export default {
         // getCharacters 现在是异步的，因为需要检查 OEOS 状态
         this.characters = await window.oeosApi.getCharacters();
       } catch (err) {
-        this.error = err.message || '加载角色列表失败';
+        this.error = err.message || this.$t('Failed to load character list');
         console.error('[CharacterSelector] Error loading characters:', err);
       } finally {
         this.loading = false;
@@ -175,7 +184,7 @@ export default {
         await this.loadCharacters();
 
       } catch (err) {
-        this.error = err.message || '启用 OEOS 失败';
+        this.error = err.message || this.$t('Failed to enable OEOS');
         console.error('[CharacterSelector] Error enabling OEOS:', err);
       } finally {
         this.$set(this.enablingOEOS, index, false);
@@ -193,7 +202,9 @@ export default {
         }
 
         // 确认删除
-        if (!confirm(`确定要删除角色 "${character.name}" 的 OEOS 数据吗？这将删除所有游戏进度和页面数据。`)) {
+        const confirmMessage = this.$t('Are you sure you want to delete OEOS data for character "${0}"? This will delete all game progress and page data.')
+          .replace('${0}', character.name);
+        if (!confirm(confirmMessage)) {
           return;
         }
 
@@ -204,7 +215,7 @@ export default {
         await this.loadCharacters();
 
       } catch (err) {
-        this.error = err.message || '删除 OEOS 失败';
+        this.error = err.message || this.$t('Failed to delete OEOS');
         console.error('[CharacterSelector] Error disabling OEOS:', err);
       } finally {
         this.$set(this.disablingOEOS, index, false);
@@ -214,8 +225,8 @@ export default {
       return `/characters/${avatar}`;
     },
     formatDate(timestamp) {
-      if (!timestamp) return '无';
-      return new Date(timestamp).toLocaleDateString('zh-CN');
+      if (!timestamp) return this.$t('None');
+      return new Date(timestamp).toLocaleDateString();
     },
     // 加载全局设置
     loadSettings() {

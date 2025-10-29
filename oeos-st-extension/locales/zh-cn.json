@@ -1,0 +1,19 @@
+{
+  "Select Character to Start Adventure": "选择角色开始冒险",
+  "Enable OEOS": "启用 OEOS",
+  "Delete OEOS": "删除 OEOS",
+  "No description": "无描述",
+  "Chat history": "聊天记录",
+  "Last chat": "最后聊天",
+  "No characters found": "没有找到可用的角色",
+  "OEOS Global Settings": "OEOS全局设置",
+  "Enable Images": "启用图片",
+  "Enable Audio": "启用音频",
+  "Close": "关闭",
+  "Failed to load character list": "加载角色列表失败",
+  "Failed to enable OEOS": "启用 OEOS 失败",
+  "Are you sure you want to delete OEOS data for character \"${0}\"? This will delete all game progress and page data.": "确定要删除角色 \"${0}\" 的 OEOS 数据吗？这将删除所有游戏进度和页面数据。",
+  "Failed to delete OEOS": "删除 OEOS 失败",
+  "None": "无"
+}
+
