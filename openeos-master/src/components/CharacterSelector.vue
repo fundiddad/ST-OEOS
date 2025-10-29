@@ -52,6 +52,16 @@
                 启用 OEOS
               </v-btn>
             </v-list-item-action>
+            <v-list-item-action v-if="char.isOEOS">
+              <v-btn
+                small
+                color="error"
+                @click.stop="disableOEOS(index)"
+                :loading="disablingOEOS[index]"
+              >
+                删除 OEOS
+              </v-btn>
+            </v-list-item-action>
           </v-list-item>
         </v-list>
         <v-alert v-else type="info">
@@ -101,6 +111,7 @@ export default {
       loading: true,
       error: null,
       enablingOEOS: {},  // 跟踪每个角色的启用状态
+      disablingOEOS: {},  // 跟踪每个角色的禁用状态
       showSettingsDialog: false,  // 设置对话框显示状态
       settings: {
         enableImages: true,
@@ -168,6 +179,35 @@ export default {
         console.error('[CharacterSelector] Error enabling OEOS:', err);
       } finally {
         this.$set(this.enablingOEOS, index, false);
+      }
+    },
+    async disableOEOS(index) {
+      try {
+        // 设置加载状态
+        this.$set(this.disablingOEOS, index, true);
+
+        const character = this.characters[index];
+
+        if (!window.oeosApi || !window.oeosApi.disableOEOSForCharacter) {
+          throw new Error('OEOS API not available');
+        }
+
+        // 确认删除
+        if (!confirm(`确定要删除角色 "${character.name}" 的 OEOS 数据吗？这将删除所有游戏进度和页面数据。`)) {
+          return;
+        }
+
+        // 调用 API 禁用 OEOS
+        await window.oeosApi.disableOEOSForCharacter(character.index);
+
+        // 重新加载角色列表以更新状态
+        await this.loadCharacters();
+
+      } catch (err) {
+        this.error = err.message || '删除 OEOS 失败';
+        console.error('[CharacterSelector] Error disabling OEOS:', err);
+      } finally {
+        this.$set(this.disablingOEOS, index, false);
       }
     },
     getCharacterAvatar(avatar) {

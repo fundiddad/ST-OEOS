@@ -670,6 +670,70 @@ export async function enableOEOSForCharacter(charIndex) {
 }
 
 /**
+ * 为角色禁用 OEOS 支持（删除6个世界树条目）
+ * @param {number} charIndex 角色索引
+ * @returns {Promise<void>}
+ */
+export async function disableOEOSForCharacter(charIndex) {
+    try {
+        console.info(`[OEOS] 正在为角色禁用 OEOS...`);
+
+        const char = characters[charIndex];
+        if (!char) {
+            throw new Error('角色不存在');
+        }
+
+        // 获取角色绑定的 World Info 名称
+        const worldInfoName = char.data?.extensions?.world;
+        if (!worldInfoName) {
+            throw new Error('角色没有绑定 World Info');
+        }
+
+        // 加载 World Info
+        let worldInfo = await loadWi(worldInfoName);
+        if (!worldInfo || !worldInfo.entries) {
+            throw new Error('World Info 不存在或为空');
+        }
+
+        // 定义需要删除的条目的 comment 标识
+        const oeosComments = [
+            'OEOS Character Marker - Do not delete',
+            'Pages',
+            'State',
+            'Graph',
+            'summary',
+            'Dynamic-Context'
+        ];
+
+        // 查找并删除这6个条目
+        let deletedCount = 0;
+        const entriesToDelete = [];
+
+        for (const [uid, entry] of Object.entries(worldInfo.entries)) {
+            if (entry.comment && oeosComments.includes(entry.comment)) {
+                entriesToDelete.push({ uid, comment: entry.comment });
+                deletedCount++;
+            }
+        }
+
+        // 执行删除
+        for (const item of entriesToDelete) {
+            delete worldInfo.entries[item.uid];
+            console.info(`[OEOS] 已删除条目: ${item.comment}`);
+        }
+
+        // 保存更新后的 World Info
+        await saveWi(worldInfoName, worldInfo);
+
+        console.info(`[OEOS] 角色 ${char.name} 已禁用 OEOS 支持，删除了 ${deletedCount} 个条目`);
+    } catch (error) {
+        console.error(`[OEOS] 禁用 OEOS 失败: ${error.message}`);
+        console.error('[OEOS] Error disabling OEOS for character:', error);
+        throw error;
+    }
+}
+
+/**
  * 绑定选定的角色到游戏
  * @param {number} charIndex 角色索引
  */
@@ -941,6 +1005,7 @@ Object.assign(window.oeosApi, {
     bindCharacter,
     isOEOSCharacter,                    // 检查是否为 OEOS 角色
     enableOEOSForCharacter,             // 启用 OEOS 支持
+    disableOEOSForCharacter,            // 禁用 OEOS 支持（删除世界树条目）
     // V2（元素数据对象实现，稳定路径）
     initializeGameDataFromChatV2,
     updateGameDataFromAIResponseV2,
