@@ -62,7 +62,10 @@ AI-generated pages:
 
 
 2. **Install SPreset Script**
-   - Install 【SPreset - Built-in Regex for Presets | Macro Nesting...】 from "Tavern Helper Scripts"
+   - Install [SPreset - Built-in Regex for Presets](./oeos-st-extension/【soliumbra】预设内置正则v2%20github版.json) from "Tavern Helper Scripts"
+   ```
+   oeos-st-extension\【soliumbra】预设内置正则v2 github版.json
+   ```
    - Reference link: https://discord.com/channels/1134557553011998840/1407146985643053096
 
 ![alt text](readme_images/1.png)

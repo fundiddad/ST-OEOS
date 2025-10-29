@@ -62,7 +62,10 @@ AI生成的页面：
 
 
 2. **安装 SPreset 脚本**
-   - 安装"酒馆助手脚本"中的【SPreset - 预设内置正则 | 宏嵌套…】
+   - 安装"酒馆助手脚本"中的 [SPreset预设内置正则](./oeos-st-extension/【soliumbra】预设内置正则v2%20github版.json)
+   ```
+   oeos-st-extension\【soliumbra】预设内置正则v2 github版.json
+   ```
    - 参考链接：https://discord.com/channels/1134557553011998840/1407146985643053096
 
 ![alt text](readme_images/1.png)
@@ -85,7 +88,7 @@ AI生成的页面：
 
 2. 重启 SillyTavern
 
-3. 在"扩展管理 > 第三方扩展"中启用 "OEOS Interface"\\
+3. 在"扩展管理 > 第三方扩展"中启用 "OEOS Interface"
 
 
 ![alt text](readme_images/image-2.png)
